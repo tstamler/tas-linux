@@ -1,0 +1,16 @@
+sudo openvpn --mktun --dev tap0
+sudo ip link set tap0 up
+sudo ip addr add 10.0.0.1/24 dev tap0
+
+TTY 1:
+sudo apt-get install tshark
+tshark -i tap0
+
+TTY 2:
+gcc read_tap.c
+./a.out
+
+TTY 3:
+ping 10.0.0.2
+  or
+echo -n "hello" | nc -4u -w0 10.0.0.2 3000
