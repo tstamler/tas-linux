@@ -7,6 +7,8 @@
 #include <rte_lcore.h>
 #include <rte_launch.h>
 
+#define MAX_PKTS 4
+
 static int parse_params(int argc, char *argv[]);
 static int network_init();
 static int tap_init();
@@ -36,6 +38,8 @@ static const struct rte_eth_conf port_conf = {
 
 static struct rte_eth_dev_info eth_devinfo;
 struct ether_addr eth_addr;
+
+int tap_fd;
 
 int main(int argc, char *argv[])
 {
@@ -124,10 +128,43 @@ static int tap_init(){
 }
 
 static int poll_net(){
+    struct rte_mbuf* pkt_buf[MAX_PKTS];
+    struct rte_mbuf* m;
+    void* data;
+    int len, ret;
 
-    //TODO: 1) try to read packets from dpdk
-    //      2) extract buffers from mbufs
-    //      3) write buffers to tap
+    /*
+    During my internship, DPDK would hang if I only tried to read one
+    packet at a time from it. Not sure why as some example programs in
+    the docs indicate that that should be possible without any issues.
+    */
+    int num_pkts = rte_eth_rx_burst(port_id, 0, pkt_buf, MAX_PKTS);
+
+    if (num_pkts == 0) {
+        /* received no packets */
+        return 0;
+    } else {
+        /* received some packets */
+        for (int i = 0; i < num_pkts; i++) {
+            m = pkt_buf[i];
+            /* grab data */
+            data = (void*)rte_pktbuf_mtod(m, void*);
+            /* grab length */
+            len = m->pkt_len;
+            /* write to tap */
+            ret = write(tap_fd, data, len);
+            if (ret < 0) {
+                fprintf(stderr, "error writing to tap device\n");
+                goto error_exit;
+            }
+            rte_pktmbuf_free(m);
+        }
+        return num_pkts;
+    }
+
+    error_exit:
+        fprintf(stderr, "pool_net failed\n");
+        return -1;
 
 }
 
