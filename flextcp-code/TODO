@@ -1,0 +1,177 @@
+--- Unclaimed ---
+
+All in Google Doc
+
+--- Simon ---
+
+--- Tim ---
+
+--- Antoine ---
+
+--- Naveen ---
+
+--- Arvind ---
+
+--- Later ---
+
+* How generic can we make it?
+  * QUIC
+  x Over Internet?
+    x IP fragments
+      x Not really supported in IPv6. And TCP does PMTU discovery. Are
+        they still necessary?
+  * Click programs?
+  * NFS
+
+--- Done ---
+
+* batch operations to the slow path
+
+* What's the best (lowest overhead) we can do?
+  * Similar to L4 message passing experiments
+
+* Any smart indexing that doesn't require hashing?
+  * Use hash of NIC
+
+* Split headers
+  * On TX, descriptors refer to separate header in fastemu and payload
+    in app queue
+  * On RX, this is more difficult, unless we can filter connections precisely
+    * App can read payload directly from NIC
+    * SoftTCP processes headers and sends message
+  * Use DMA engine to copy payload into application RX buffer
+    * Optimistically copy once we know what app, check later
+
+* Align connection struct layout so that 1 cacheline per connection is accessed
+
+* Batch processing of packets of the same connection
+  * Better cache locality
+
+* Need to keep up with DDIO
+  * If NIC is too fast, then cache will overflow
+
+* Use all NIC queues (even if more than cores) to batch more packets
+  of the same connections
+  * But not sure this works well with stride prefetcher
+  * Explicitly prefetch?
+
+* Scale up and down
+  * < 1 core
+    * Blocking in SoftTCP
+    * Blocking in applications
+
+* breakdown linux overheads
+  * use timestamps through kernel for echo benchmarks
+
+* Measure per-packet L[123] misses
+  * Linux
+  * SoftTCP
+    * Use CAT to partition app cores and FP cores
+    * Non-temporal writes
+
+* Measure per-packet TLB misses
+  * Linux
+  * SoftTCP
+    * If misses, map everything using a single 1G page
+
+* Can we integrate with Linux TCP stack?
+  * Without modifying Linux TCP stack?
+  * Via shared-memory NIC driver
+  * How to keep linux up-to-date without exchanging payload with it?
+  * For congestion control:
+    * Convert congestion feedback to something less frequent (by emulating
+      high delay link)
+    * Similar to segmentation offload
+
+x Run Linux, mTCP, and FlexNIC experiments
+  x mystorm
+    x For latency results, skip worker 0 that has odd output
+
+x Run mTCP experiments
+  x TCP echo
+  x Memcached
+
+x Congestion control
+
+x Applications
+  x TPC like things
+
+x Pass pointers to send queue entries in packet and echo them in the
+  ACK. Use them on NIC to automatically garbage collect.
+
+x Move everything to new cluster
+  x Need 40G interfaces for anything meaningful
+  x Maybe 10G is fine for real applications
+    x Should be. We don't have enough 40G cards
+
+x Object steering over multiple connections
+  x Have indirect chunk queue
+  x Might not be needed for implementation, only in design
+
+x 2 or more different objects on same connection interleaved is not supported yet
+
+x Programming interface
+
+x Congestion control simulations on ns-3
+
+x Netronome support in FlexTCP
+  x ether_addr_copy in nfp_net.c is wrong way around
+
+x recvfrom should only keep history of last packet for each object
+  x compare against that
+  x prob just keep on the socket struct
+
+x Measure applications on FlexTCP, Linux:
+  x Echo microbenchmark
+  * Memcached (FlexKVS doesn't support TCP)
+    x Port to flexTCP
+    * multi-threaded
+    * What's the current bottleneck?
+
+x Detect missing/out-of-order ACKs
+
+* Receive support for SACKs
+
+x Only 2 FlexTCP modes make sense:
+  x Full TCP compatibility (one peer can be Linux)
+  x RMTTCP with full offload to packet format and NIC (client and server)
+
+x Handle multiple connections in tcpecho on a single thread
+  x accept all up-front
+  x epoll for them
+
+x Make Linux tcpecho multi-threaded (support connections)
+
+x Object steering for tcptest_async and multi-threaded RX
+
+x "to ask" list for netronome
+  x P4 on linux?
+  x assign to descriptor queues via microC?
+
+x Order verification still not working properly
+  x Maybe sending out of order? Yep. 2 options:
+    * Sequence at the NIC. Need send reservations and check of all
+      reservations before send.
+    x Sequence in the app. Descriptor and sequence number alloc need
+      to be atomic.
+
+x Fix sequence number verification
+  x Detect beginning of object
+  x Can't receive if not beginning of object
+
+x Object steering "overlay protocol"
+  x Add object identifier TCP option if shall be transparent to legacy TCP stacks
+  x Need "begin of object" flag
+  x Receive-side support in FlexNIC
+
+* If we're processing things in parallel (even within the same
+  connection) then there's no need to keep an order among objects
+  * There's TCP object steering, which can be done in software only and
+    would likely yield speedups
+  * Then there's speeding up TCP with RMT, which can be done for
+    traditional and for object-steered TCP
+
+* Control plane interface
+* Send buffer garbage collection
+* Initiating connections
+* Get DEBUG_PERF to work again
