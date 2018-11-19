@@ -1,4 +1,4 @@
-HOSTNAME = $(shell hostname)
+HOSTNAME = tcp
 CFLAGS = -std=gnu99 -O3 -g -Wall -Werror -I. -Iinclude/ -march=native -DFLEXNIC -DHOSTNAME=\"$(HOSTNAME)\" -DHOSTNAME_$(subst -,_,$(HOSTNAME)) -DNTHREADS=$(NTHREADS)
 LDFLAGS = -pthread -g
 LDLIBS = -lrt
