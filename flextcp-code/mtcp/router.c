@@ -102,7 +102,7 @@ static int network_init(unsigned num_rx, unsigned num_tx)
   unsigned count;
 
   /* make sure there is only one port */
-  count = rte_eth_dev_count();
+  count = rte_eth_dev_count_avail();
   if (count == 0) {
     fprintf(stderr, "No ethernet devices\n");
     return -1;
