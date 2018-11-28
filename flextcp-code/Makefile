@@ -56,7 +56,7 @@ LDLIBS += -lm -lpthread -lrt -ldl
 
 UTILS_OBJS = $(addprefix utils/,utils.o rng.o timeout.o)
 DRIVER_OBJS = $(addprefix driver/,driver.o)
-KERNEL_OBJS = $(addprefix kernel/,kernel.o packetmem.o appif.o appif_ctx.o \
+KERNEL_OBJS = $(addprefix kernel/,kernel.o tap.o packetmem.o appif.o appif_ctx.o \
 	nicif.o cc.o tcp.o arp.o config.o routing.o)
 FASTEMU_OBJS = $(addprefix flexnic/,fastemu.o flexnic.o dma.o network.o \
 		    qman.o trace.o fast_kernel.o fast_appctx.o fast_flows.o)
