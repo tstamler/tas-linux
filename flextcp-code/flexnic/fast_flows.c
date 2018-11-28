@@ -278,7 +278,7 @@ int fast_flows_packet(struct dataplane_context *ctx, void *buf,
       f_beui32(p->tcp.ackno), TCPH_FLAGS(&p->tcp), payload_bytes);
 #endif
 
-  actx = &pl_memory->appctx[ctx->core][fs->db_id];
+  actx = &pl_memory->appctx[ctx->id][fs->db_id];
   fast_actx_rxq_pf(ctx, actx);
 
   util_spin_lock(&fs->lock);

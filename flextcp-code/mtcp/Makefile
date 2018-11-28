@@ -9,8 +9,10 @@ NETMAP=0
 MTCP_BASE?=${HOME}/mtcp
 
 # DPDK LIBRARY and HEADER
-DPDK_INC=${MTCP_BASE}/dpdk/include
-DPDK_LIB=${MTCP_BASE}/dpdk/lib/
+#DPDK_INC=/usr/local/share/dpdk/x86_64-default-linuxapp-gcc/include
+#DPDK_LIB=/usr/local/share/dpdk/x86_64-default-linuxapp-gcc/lib
+DPDK_INC=${HOME}/dpdk/build/include
+DPDK_LIB=${HOME}/dpdk/build/lib
 
 # mtcp library and header 
 MTCP_FLD    =${MTCP_BASE}/mtcp
