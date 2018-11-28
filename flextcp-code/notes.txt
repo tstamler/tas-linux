@@ -1,0 +1,15 @@
+sockets/interpose:
+    LD_PRELOAD libc functions
+
+
+fastemu.c: 
+    fast patch
+
+kernel dir:
+    slow paths
+
+
+int dma_write(uintptr_t addr, size_t len, const void *buf):
+    comm between fast and slow
+
+nicif pol
