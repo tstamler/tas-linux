@@ -69,6 +69,13 @@ int tap_init()
         return err;
     }
 
+    /*
+     *  TODO: might need to assign in ip to this interface. Making it persistent might help.
+     * https://stackoverflow.com/questions/17900459/how-to-set-ip-address-of-tun-device-and-set-link-up-through-c-program
+     * https://linuxgazette.net/149/misc/melinte/udptun.c
+     * https://stackoverflow.com/questions/36375530/what-is-the-destination-address-for-a-tap-tun-device
+     */
+
     return 0;
 }
 
