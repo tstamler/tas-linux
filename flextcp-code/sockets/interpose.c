@@ -10,6 +10,15 @@
 #include <utils.h>
 #include <flextcp_sockets.h>
 
+#define MAXSOCK 128 * 1024
+
+struct fd_trans {
+    int linux_fd;
+    int flexnic_fd;
+};
+
+static struct fd_trans map[MAXSOCK];
+
 static inline void ensure_init(void);
 
 /* Function pointers to the libc functions */
@@ -60,7 +69,12 @@ int socket(int domain, int type, int protocol)
     return libc_socket(domain, type, protocol);
   }
 
-  return _SF(socket)(domain, type, protocol);
+  int flexnicfd = _SF(socket)(domain, type, protocol);
+  if (flexnicfd > 0) {
+    map[flexnicfd].flexnic_fd = flexnicfd;
+    map[flexnicfd].linux_fd = libc_socket(domain, type, protocol);
+  }
+  return flexnicfd;
 }
 
 int close(int sockfd)
@@ -90,6 +104,7 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
   if ((ret = _SF(bind)(sockfd, addr, addrlen)) == -1 && errno == EBADF) {
     return libc_bind(sockfd, addr, addrlen);
   }
+  libc_bind(map[sockfd].linux_fd, addr, addrlen);
   return ret;
 }
 
@@ -110,6 +125,7 @@ int listen(int sockfd, int backlog)
   if ((ret = _SF(listen)(sockfd, backlog)) == -1 && errno == EBADF) {
     return libc_listen(sockfd, backlog);
   }
+  libc_listen(map[sockfd].linux_fd, backlog);
   return ret;
 }
 
@@ -123,6 +139,10 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
   {
     return libc_accept4(sockfd, addr, addrlen, flags);
   }
+  if (ret > 0) {
+    map[ret].flexnic_fd = ret;
+    map[ret].linux_fd = libc_accept4(map[sockfd].linux_fd, addr, addrlen, flags);
+  }
   return ret;
 }
 
@@ -132,6 +152,10 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
   ensure_init();
   if ((ret = _SF(accept)(sockfd, addr, addrlen)) == -1 && errno == EBADF) {
     return libc_accept(sockfd, addr, addrlen);
+  }
+  if (ret > 0) {
+    map[ret].flexnic_fd = ret;
+    map[ret].linux_fd = libc_accept(map[sockfd].linux_fd, addr, addrlen);
   }
   return ret;
 }
@@ -175,6 +199,7 @@ int setsockopt(int sockfd, int level, int optname, const void *optval,
   {
     return libc_setsockopt(sockfd, level, optname, optval, optlen);
   }
+  libc_setsockopt(map[sockfd].linux_fd, level , optname, optval, optlen);
   return ret;
 }
 
