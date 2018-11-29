@@ -90,7 +90,7 @@ int tap_init(uint32_t ip4)
     memset(&addr, 0, sizeof(addr));
     addr.sin_addr.s_addr = ip4;
     addr.sin_family = AF_INET;
-    memcpy( &ifr->ifr_addr, &addr, sizeof(struct sockaddr) );
+    memcpy( &ifr.ifr_addr, &addr, sizeof(struct sockaddr) );
 
     if(ioctl(sock, SIOCSIFADDR, &ifr) < 0) {
         perror("ioctl: socket SIOCSIFADDR\n");
