@@ -26,7 +26,7 @@ int main()
         printf("tap init didnt work, err: %d\n", err);
     }
 
-    char* buf[2000];
+    char buf[2000];
     int rd = tap_read(buf, 2000);
 
     printf("return of read:  %d\n", rd);
