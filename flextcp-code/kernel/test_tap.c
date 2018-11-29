@@ -16,7 +16,7 @@ int main()
 { 
     uint32_t local_ip4 = 0L; 
    
-    if (inet_pton(AF_INET, "12.12.12.12", &local_ip4)) {
+    if (inet_pton(AF_INET, "12.12.12.12", &local_ip4) != 1) {
         printf("pton failed\n"); 
         return 1;
     }
