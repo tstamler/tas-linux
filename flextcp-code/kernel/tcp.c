@@ -66,6 +66,8 @@ static void listener_packet(struct listener *l, const struct pkt_tcp *p,
 static void listener_accept(struct listener *l);
 
 static inline uint16_t port_alloc(void);
+static inline int send_control_tap(const struct connection *conn, uint16_t flags,
+    int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
 static inline int send_control(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
 static inline int send_reset(const struct pkt_tcp *p,
@@ -718,6 +720,7 @@ static void listener_packet(struct listener *l, const struct pkt_tcp *p,
     return;
   }
 
+  tap_write((uint8_t*) p, len);
   /* make sure we don't already have this 4-tuple */
   for (n = 0, bp = l->backlog_pos; n < l->backlog_used;
       n++, bp = (bp + 1) % l->backlog_len)
@@ -822,6 +825,7 @@ static void listener_accept(struct listener *l)
   tcp_conns = c;
   nbqueue_enq(&conn_async_q, &c->comp.el);
 
+  send_control_tap(c, TCP_ACK, 1, c->syn_ts, 0);
 out:
   l->backlog_used--;
   l->backlog_pos++;
@@ -829,6 +833,104 @@ out:
     l->backlog_pos -= l->backlog_len;
   }
 }
+
+/*
+static inline int send_network_raw(uint16_t len, uint8_t* buf)
+{
+	uint32_t new_tail;
+	void* p;
+
+	// allocate send buffer
+  	if (nicif_tx_alloc(len, (void **) &p, &new_tail) != 0) {
+    		fprintf(stderr, "send_control failed\n");
+    		return -1;
+  	}
+	nicif_tx_send(new_tail);
+}
+*/
+static inline int send_control_tap_raw(uint64_t remote_mac, uint32_t remote_ip,
+    uint16_t remote_port, uint16_t local_port, uint32_t local_seq,
+    uint32_t remote_seq, uint16_t flags, int ts_opt, uint32_t ts_echo,
+    uint16_t mss_opt)
+{
+  uint8_t buf[1500];
+  struct pkt_tcp *p;
+  struct tcp_mss_opt *opt_mss;
+  struct tcp_timestamp_opt *opt_ts;
+  uint8_t optlen;
+  uint16_t len, off_ts, off_mss;
+
+  /* calculate header length depending on options */
+  optlen = 0;
+  off_mss = optlen;
+  optlen += (mss_opt ? sizeof(*opt_mss) : 0);
+  off_ts = optlen;
+  optlen += (ts_opt ? sizeof(*opt_ts) : 0);
+  optlen = (optlen + 3) & ~3;
+  len = sizeof(*p) + optlen;
+
+  /* allocate send buffer 
+  if (nicif_tx_alloc(len, (void **) &p, &new_tail) != 0) {
+    fprintf(stderr, "send_control failed\n");
+    return -1;
+  }*/
+  p = (struct pkt_tcp*) buf;
+
+  /* fill ethernet header */
+  memcpy(&p->eth.dest, &remote_mac, ETH_ADDR_LEN);
+  memcpy(&p->eth.src, &flexnic_info->mac_addr, ETH_ADDR_LEN);
+  p->eth.type = t_beui16(ETH_TYPE_IP);
+
+  /* fill ipv4 header */
+  IPH_VHL_SET(&p->ip, 4, 5);
+  p->ip._tos = 0;
+  p->ip.len = t_beui16(len - offsetof(struct pkt_tcp, ip));
+  p->ip.id = t_beui16(3); /* TODO: not sure why we have 3 here */
+  p->ip.offset = t_beui16(0);
+  p->ip.ttl = 0xff;
+  p->ip.proto = IP_PROTO_TCP;
+  p->ip.chksum = 0;
+  p->ip.src = t_beui32(config.ip);
+  p->ip.dest = t_beui32(remote_ip);
+
+  /* fill tcp header */
+  p->tcp.src = t_beui16(local_port);
+  p->tcp.dest = t_beui16(remote_port);
+  p->tcp.seqno = t_beui32(local_seq);
+  p->tcp.ackno = t_beui32(remote_seq);
+  TCPH_HDRLEN_FLAGS_SET(&p->tcp, 5 + optlen / 4, flags);
+  p->tcp.wnd = t_beui16(11680); /* TODO */
+  p->tcp.chksum = 0;
+  p->tcp.urgp = t_beui16(0);
+
+  /* if requested: add mss option */
+  if (mss_opt) {
+    opt_mss = (struct tcp_mss_opt *) ((uint8_t *) (p + 1) + off_mss);
+    opt_mss->kind = TCP_OPT_MSS;
+    opt_mss->length = sizeof(*opt_mss);
+    opt_mss->mss = t_beui16(mss_opt);
+  }
+
+  /* if requested: add timestamp option */
+  if (ts_opt) {
+    opt_ts = (struct tcp_timestamp_opt *) ((uint8_t *) (p + 1) + off_ts);
+    memset(opt_ts, 0, optlen);
+    opt_ts->kind = TCP_OPT_TIMESTAMP;
+    opt_ts->length = sizeof(*opt_ts);
+    opt_ts->ts_val = t_beui32(0);
+    opt_ts->ts_ecr = t_beui32(ts_echo);
+  }
+
+  /* calculate header checksums */
+  p->ip.chksum = rte_ipv4_cksum((void *) &p->ip);
+  p->tcp.chksum = rte_ipv4_udptcp_cksum((void *) &p->ip, (void *) &p->tcp);
+  
+  /* send packet 
+  nicif_tx_send(new_tail);*/
+  tap_write(buf, len);
+  return 0;
+}
+
 
 static inline int send_control_raw(uint64_t remote_mac, uint32_t remote_ip,
     uint16_t remote_port, uint16_t local_port, uint32_t local_seq,
@@ -911,6 +1013,14 @@ static inline int send_control_raw(uint64_t remote_mac, uint32_t remote_ip,
   return 0;
 }
 
+static inline int send_control_tap(const struct connection *conn, uint16_t flags,
+    int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
+{
+  return send_control_tap_raw(conn->remote_mac, conn->remote_ip, conn->remote_port,
+      conn->local_port, conn->local_seq, conn->remote_seq, flags, ts_opt,
+      ts_echo, mss_opt);
+
+}
 static inline int send_control(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
 {

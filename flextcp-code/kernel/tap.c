@@ -41,12 +41,14 @@
 
 //based on: https://backreference.org/2010/03/26/tuntap-interface-tutorial/
 
+#include "internal.h"
+
 static int tap_fd;
 
 /*
  * Returns 0 if successful, -err if error.
  */
-int tap_init()
+int tapif_init()
 {
     //this is the entry point of any TUN/TAP device
     //and it needs root or a network cap.
@@ -72,6 +74,19 @@ int tap_init()
     return 0;
 }
 
+int tapif_poll()
+{
+    uint8_t buf[1500];
+    uint16_t size = tap_read(buf, 1500);
+
+    if(size > 0){
+	    send_network_raw(buf, size);
+	    //ACK generated and sent in tcp.c, might need to move here
+	    return 1;
+    } else
+	    return 0;
+}
+
 /*
  * (proxy call to POSIX read; man read)
  * If there's data available, write it to the pointer passed, return value is number of bytes.
@@ -79,7 +94,7 @@ int tap_init()
  * If there's no data, return zero.
  * On error, return negative.
  */
-int tap_read(char* buf, size_t count)
+int tap_read(uint8_t* buf, size_t count)
 {
     return read(tap_fd, buf, count);
 }
@@ -89,7 +104,7 @@ int tap_read(char* buf, size_t count)
  * Tries to write data to the tap device. n bytes from buf.
  * Returns bytes written if successful, negative if error.
  */
-int tap_write(char* buf, size_t count) 
+int tap_write(uint8_t* buf, size_t count) 
 {
     return write(tap_fd, buf, count);
 }

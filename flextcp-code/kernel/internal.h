@@ -9,6 +9,7 @@
 #include <flexnic_driver.h>
 #include <utils_nbqueue.h>
 #include <utils_timeout.h>
+#include "tap.h"
 
 struct configuration;
 struct config_route;
@@ -827,6 +828,19 @@ int routing_init(void);
  * @return 0 on success, < 0 on error, and > 0 for asynchronous return.
  */
 int routing_resolve(struct nicif_completion *comp, uint32_t ip, uint64_t *mac);
+
+static inline void send_network_raw(uint8_t* buf, uint16_t len)
+{
+        uint32_t new_tail;
+        void* p;
+
+        /** allocate send buffer */
+        if (nicif_tx_alloc(len, (void **) &p, &new_tail) != 0) {
+                fprintf(stderr, "send_control failed\n");
+                exit(-1);
+        }
+        nicif_tx_send(new_tail);
+}
 
 /** @} */
 
