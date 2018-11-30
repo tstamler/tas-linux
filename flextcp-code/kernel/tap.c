@@ -48,7 +48,7 @@ static int tap_fd;
 /*
  * Returns 0 if successful, -err if error.
  */
-int tapif_init()
+int tap_init(uint32_t ip4)
 {
     //this is the entry point of any TUN/TAP device
     //and it needs root or a network cap.
@@ -71,7 +71,63 @@ int tapif_init()
         return err;
     }
 
-    return 0;
+
+    /*
+     * This is setting the TAP ip, might not be necessary
+     * 
+     * If you bind, you can bind to a specific IP address corresponding to one of the machine's interfaces, 
+     * or you can bind to 0.0.0.0, in which case the socket will listen on all interfaces.
+     * If you connect an unbound socket, then the machine's routing tables, in conjunction with the destination IP 
+     * adress, will determine which interface the connection request goes out on.
+     */ 
+
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        perror("Cannot open udp socket on TAP\n");
+        close(tap_fd);
+        return -1;
+    }
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_addr.s_addr = ip4;
+    addr.sin_family = AF_INET;
+    memcpy( &ifr.ifr_addr, &addr, sizeof(struct sockaddr) );
+
+    if(ioctl(sock, SIOCSIFADDR, &ifr) < 0) {
+        perror("ioctl: socket SIOCSIFADDR\n");
+        close(tap_fd);
+        return -1;
+    }
+
+    if (ioctl(sock, SIOCGIFFLAGS, &ifr) < 0) {
+        perror("ioctl: socket SIOCGIFFLAGS\n");
+        close(tap_fd);
+        close(sock);
+        return -1;
+    }
+
+    ifr.ifr_flags |= IFF_UP;
+    ifr.ifr_flags |= IFF_RUNNING;
+
+    if (ioctl(sock, SIOCSIFFLAGS, &ifr) < 0)  {
+        perror("ioctl: socket SIOCSIFFLAGS\n");
+        close(tap_fd);
+        close(sock);
+        return -1;
+    }
+
+    close(sock);
+
+
+    /*
+     * https://stackoverflow.com/questions/17900459/how-to-set-ip-address-of-tun-device-and-set-link-up-through-c-program
+     * https://linuxgazette.net/149/misc/melinte/udptun.c
+     * https://stackoverflow.com/questions/36375530/what-is-the-destination-address-for-a-tap-tun-device
+     */
+
+    return 0; 
+
 }
 
 int tapif_poll()
