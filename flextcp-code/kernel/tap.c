@@ -130,7 +130,7 @@ int tap_init(uint32_t ip4)
 
 }
 
-int tapif_poll()
+int tap_poll()
 {
     uint8_t buf[1500];
     uint16_t size = tap_read(buf, 1500);

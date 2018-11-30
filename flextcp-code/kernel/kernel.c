@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  if (tapif_init()) {
+  if (tap_init()) {
     fprintf(stderr, "tcp_init failed\n");
     return EXIT_FAILURE;
   }
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     n += nicif_poll();
     n += cc_poll(cur_ts);
     n += appif_poll();
-    n += tapif_poll();
+    n += tap_poll();
     tcp_poll();
     util_timeout_poll_ts(&timeout_mgr, cur_ts);
 
