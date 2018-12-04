@@ -290,6 +290,7 @@ int network_poll(struct network_rx_thread *t, unsigned num, uint16_t *offs,
 #endif
   }
 
+  //fprintf(stderr, "got %d packets\n", num);
   return num;
 }
 
@@ -325,6 +326,8 @@ int network_send(struct network_tx_thread *t, unsigned num, uint16_t *offs,
     mbs[i]->data_off = offs[i];
     mbs[i]->pkt_len = mbs[i]->data_len = lens[i];
 
+    //fprintf(stderr, "net send\n");
+    //print_buf((uint8_t*) (mbs[i]->buf_addr), lens[i], 0);
 #ifdef FLEXNIC_TRACE_TX
     trace_event(FLEXNIC_TRACE_EV_TXPKT, lens[i],
         (uint8_t *) mbs[i]->buf_addr + offs[i]);

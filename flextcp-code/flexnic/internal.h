@@ -110,4 +110,51 @@ int trace_event2(uint16_t type, uint16_t len_1, const void *buf_1,
     uint16_t len_2, const void *buf_2);
 #endif
 
+static inline void print_buf(uint8_t *payload, int len, int offset)
+{
+
+        int i;
+        int gap;
+        uint8_t* ch;
+
+        /* offset */
+        fprintf(stderr, "%05d   ", offset);
+
+        /* hex */
+        ch = payload;
+        for(i = 0; i < len; i++) {
+                fprintf(stderr, "%02x ", *ch);
+                ch++;
+                /* print extra space after 8th byte for visual aid */
+                if (i == 7)
+                        fprintf(stderr, " ");
+        }
+        /* print space to handle line less than 8 bytes */
+        if (len < 8)
+                fprintf(stderr, " ");
+
+        /* fill hex gap with spaces if not full line */
+        if (len < 16) {
+                gap = 16 - len;
+                for (i = 0; i < gap; i++) {
+                        fprintf(stderr, "   ");
+                }
+        }
+        fprintf(stderr,"   ");
+
+        /* ascii (if printable) */
+        ch = payload;
+        for(i = 0; i < len; i++) {
+                if (isprint(*ch))
+                        fprintf(stderr,"%c", *ch);
+                else
+                        fprintf(stderr,".");
+                ch++;
+        }
+
+        fprintf(stderr,"\n");
+
+        return;
+}
+
 #endif /* ndef INTERNAL_H_ */

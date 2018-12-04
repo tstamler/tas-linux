@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
     n += nicif_poll();
     n += cc_poll(cur_ts);
     n += appif_poll();
-    n += tap_poll();
+    //n += tap_poll();
     tcp_poll();
     util_timeout_poll_ts(&timeout_mgr, cur_ts);
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	  timeout_ms = 10;
 	}
 
-	/* fprintf(stderr, "idle - timeout %d ms, cc_timeout = %u us, util_timeout = %u us\n", timeout_ms, cc_timeout, util_timeout); */
+	//fprintf(stderr, "idle - timeout %d ms, cc_timeout = %u us, util_timeout = %u us\n", timeout_ms, cc_timeout, util_timeout);
 	struct epoll_event event[2];
 	int n;
       again:
@@ -152,11 +152,11 @@ int main(int argc, char *argv[])
 	  }
 	}
 	assert(n != -1);
-	/* fprintf(stderr, "busy - %u events\n", n); */
+	//fprintf(stderr, "busy - %u events\n", n);
 	for(int i = 0; i < n; i++) {
 	  assert(event[i].data.fd == kernel_notifyfd);
 	  uint64_t val;
-	  /* fprintf(stderr, "- woken up by event FD = %d\n", event[i].data.fd); */
+	  //fprintf(stderr, "- woken up by event FD = %d\n", event[i].data.fd); 
 	  int r = read(kernel_notifyfd, &val, sizeof(uint64_t));
 	  assert(r == sizeof(uint64_t));
 	}

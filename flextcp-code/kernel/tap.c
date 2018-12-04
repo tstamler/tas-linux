@@ -38,12 +38,16 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <sys/poll.h>
+
 
 //based on: https://backreference.org/2010/03/26/tuntap-interface-tutorial/
 
 #include "internal.h"
 
 static int tap_fd;
+static struct pollfd poll_fd;
+static pthread_t tap_thread;
 
 /*
  * Returns 0 if successful, -err if error.
@@ -119,33 +123,42 @@ int tap_init(uint32_t ip4)
 
     close(sock);
 
-
+    poll_fd.fd = tap_fd;
+    poll_fd.events = POLLHUP | POLLIN;
     /*
      * https://stackoverflow.com/questions/17900459/how-to-set-ip-address-of-tun-device-and-set-link-up-through-c-program
      * https://linuxgazette.net/149/misc/melinte/udptun.c
      * https://stackoverflow.com/questions/36375530/what-is-the-destination-address-for-a-tap-tun-device
      */
 
+    if(pthread_create(&tap_thread, NULL, tap_poll, NULL) != 0)
+	    return -1;
+
     return 0; 
 
 }
 
-int tap_poll()
-{
-    uint8_t buf[1500];
-    fprintf(stderr, "polling tap\n");
-    uint16_t size = tap_read(buf, 1500);
 
-    if(size > 0){
-	    fprintf(stderr, "forwarding tap to network\n");
-	    print_buf(buf, size, 0);
-	    send_network_raw(buf, size);
-	    //ACK generated and sent in tcp.c, might need to move here
-	    return 1;
-    } else {
-	    fprintf(stderr, "got nothing\n");
-	    return 0;
+void* tap_poll(void* arg)
+{
+    uint8_t buf[1514];
+    
+    while(1){ 
+	    fprintf(stderr, "polling tap\n");
+    	    uint16_t size = poll(&poll_fd, 1, -1);
+	    
+    	if(size > 0){
+		int ret = tap_read(buf, size);
+	    	assert(ret >= 0);
+	    	fprintf(stderr, "forwarding tap to network\n");
+	    	print_buf(buf, size, 0);
+	    	//send_network_raw(buf, size);
+	    	//ACK generated and sent in tcp.c, might need to move here
+    	} else {
+	    	fprintf(stderr, "got nothing\n");
+    	}
     }
+    return NULL;
 }
 
 /*

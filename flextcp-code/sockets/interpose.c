@@ -134,15 +134,17 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
 {
   int ret;
   ensure_init();
+  fprintf(stderr, "doing accepting\n");
   if ((ret = _SF(accept4)(sockfd, addr, addrlen, flags)) == -1 &&
       errno == EBADF)
   {
+    fprintf(stderr, "wow wrong\n");
     return libc_accept4(sockfd, addr, addrlen, flags);
   }
   //if (ret >= 0) {
   //  map[ret].flexnic_fd = ret;
   //  map[ret].linux_fd = libc_accept4(map[sockfd].linux_fd, addr, addrlen, flags);
-  //}
+ // }
   fprintf(stderr, "done accepting\n");
   return ret;
 }
@@ -151,13 +153,16 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
   int ret;
   ensure_init();
+  fprintf(stderr, "doing accepting 2\n");
   if ((ret = _SF(accept)(sockfd, addr, addrlen)) == -1 && errno == EBADF) {
+    fprintf(stderr, "wow wrong\n");
     return libc_accept(sockfd, addr, addrlen);
   }
-  if (ret >= 0) {
-    map[ret].flexnic_fd = ret;
-    map[ret].linux_fd = libc_accept(map[sockfd].linux_fd, addr, addrlen);
-  }
+  //if (ret >= 0) {
+  //  map[ret].flexnic_fd = ret;
+  //  map[ret].linux_fd = libc_accept(map[sockfd].linux_fd, addr, addrlen);
+  //}
+  fprintf(stderr, "done accepting\n");
   return ret;
 }
 

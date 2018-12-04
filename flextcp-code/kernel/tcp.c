@@ -94,6 +94,7 @@ void tcp_poll(void)
   uint8_t *p;
   int ret;
 
+  //fprintf(stderr, "tcp poll\n");
   while ((p = nbqueue_deq(&conn_async_q)) != NULL) {
     conn = (struct connection *) (p - offsetof(struct connection, comp.el));
     if (conn->status == CONN_ARP_PENDING) {
@@ -523,11 +524,13 @@ static int conn_reg_synack(struct connection *c)
     ecn_flags = TCP_ECE;
   }
 
+  fprintf(stderr, "sending SYNACK\n");
   /* send ACK */
   send_control(c, TCP_SYN | TCP_ACK | ecn_flags, 1, c->syn_ts, TCP_MSS);
 
   appif_accept_conn(c, 0);
 
+  send_control_tap(c, TCP_ACK, 1, c->syn_ts, 0);
   return 0;
 }
 
@@ -828,7 +831,8 @@ static void listener_accept(struct listener *l)
   tcp_conns = c;
   nbqueue_enq(&conn_async_q, &c->comp.el);
 
-  send_control_tap(c, TCP_ACK, 1, c->syn_ts, 0);
+  fprintf(stderr, "connection created\n");
+  //send_control_tap(c, TCP_ACK, 1, c->syn_ts, 0);
 out:
   l->backlog_used--;
   l->backlog_pos++;

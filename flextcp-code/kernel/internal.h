@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <flexnic_driver.h>
 #include <utils_nbqueue.h>
@@ -840,6 +841,7 @@ static inline void send_network_raw(uint8_t* buf, uint16_t len)
         if (nicif_tx_alloc(len, (void **) &p, &new_tail) != 0) {
                 fprintf(stderr, "send_network_raw failed\n");
         }
+	memcpy(p, (void*) buf, len);
         nicif_tx_send(new_tail);
 }
 
