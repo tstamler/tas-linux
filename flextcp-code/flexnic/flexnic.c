@@ -38,9 +38,11 @@ static int glob_argc;
 static char **glob_argv;
 
 int kernel_main(int argc, char *argv[]);
+int tap_init();
 
 static void *kernel_thread(void *arg)
 {
+  sleep(2);
   kernel_main(glob_argc, glob_argv);
   return NULL;
 }
@@ -66,6 +68,11 @@ int main(int argc, char *argv[])
     fprintf(stderr, "core loads alloc failed\n");
     goto error_exit;
   }
+
+ // if (tap_init()) {
+ //   fprintf(stderr, "tap_init failed\n");
+ //   goto error_exit;
+ // }
 
   if (dma_init(fp_cores_max) != 0) {
     res = EXIT_FAILURE;

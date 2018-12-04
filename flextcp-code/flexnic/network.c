@@ -41,18 +41,16 @@ static int device_running = 0;
 static const uint8_t port_id = 0;
 static const struct rte_eth_conf port_conf = {
     .rxmode = {
-      //.split_hdr_size = 0,
-      //.header_split   = 0, /* Header Split disabled */
-      //.hw_ip_checksum = 0,
-      //.hw_vlan_filter = 0, /* VLAN filtering disabled */
-      //.jumbo_frame    = 0, /* Jumbo Frame Support disabled */
-      //.hw_strip_crc   = 0, /* CRC stripped by hardware */
+      .split_hdr_size = 0,
+      .header_split   = 0, /* Header Split disabled */
+      .hw_ip_checksum = 0,
+      .hw_vlan_filter = 0, /* VLAN filtering disabled */
+      .jumbo_frame    = 0, /* Jumbo Frame Support disabled */
+      .hw_strip_crc   = 0, /* CRC stripped by hardware */
       .mq_mode = ETH_MQ_RX_RSS,
-      .offloads = 0,
     },
     .txmode = {
       .mq_mode = ETH_MQ_TX_NONE,
-      .offloads = 0,
     },
     .rx_adv_conf = {
       .rss_conf = {
@@ -118,7 +116,7 @@ int network_init(unsigned num_rx, unsigned num_tx)
   /* get mac address and device info */
   rte_eth_macaddr_get(port_id, &eth_addr);
   rte_eth_dev_info_get(port_id, &eth_devinfo);
-  //eth_devinfo.default_txconf.txq_flags = ETH_TXQ_FLAGS_NOVLANOFFL;
+  eth_devinfo.default_txconf.txq_flags = ETH_TXQ_FLAGS_NOVLANOFFL;
 
 
   return 0;

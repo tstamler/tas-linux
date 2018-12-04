@@ -5,10 +5,13 @@
  *  @brief Kernel */
 
 #include <stdint.h>
+#include <ctype.h>
+#include <stdio.h>
 
 #include <flexnic_driver.h>
 #include <utils_nbqueue.h>
 #include <utils_timeout.h>
+
 #include "tap.h"
 
 struct configuration;
@@ -833,13 +836,58 @@ static inline void send_network_raw(uint8_t* buf, uint16_t len)
 {
         uint32_t new_tail;
         void* p;
-
         /** allocate send buffer */
         if (nicif_tx_alloc(len, (void **) &p, &new_tail) != 0) {
-                fprintf(stderr, "send_control failed\n");
-                exit(-1);
+                fprintf(stderr, "send_network_raw failed\n");
         }
         nicif_tx_send(new_tail);
+}
+
+static inline void print_buf(uint8_t *payload, int len, int offset)
+{
+
+	int i;
+	int gap;
+	uint8_t* ch;
+
+	/* offset */
+	fprintf(stderr, "%05d   ", offset);
+
+	/* hex */
+	ch = payload;
+	for(i = 0; i < len; i++) {
+		fprintf(stderr, "%02x ", *ch);
+		ch++;
+		/* print extra space after 8th byte for visual aid */
+		if (i == 7)
+			fprintf(stderr, " ");
+	}
+	/* print space to handle line less than 8 bytes */
+	if (len < 8)
+		fprintf(stderr, " ");
+
+	/* fill hex gap with spaces if not full line */
+	if (len < 16) {
+		gap = 16 - len;
+		for (i = 0; i < gap; i++) {
+			fprintf(stderr, "   ");
+		}
+	}
+	fprintf(stderr,"   ");
+
+	/* ascii (if printable) */
+	ch = payload;
+	for(i = 0; i < len; i++) {
+		if (isprint(*ch))
+			fprintf(stderr,"%c", *ch);
+		else
+			fprintf(stderr,".");
+		ch++;
+	}
+
+	fprintf(stderr,"\n");
+
+	return;
 }
 
 /** @} */

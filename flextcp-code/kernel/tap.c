@@ -133,14 +133,19 @@ int tap_init(uint32_t ip4)
 int tap_poll()
 {
     uint8_t buf[1500];
+    fprintf(stderr, "polling tap\n");
     uint16_t size = tap_read(buf, 1500);
 
     if(size > 0){
+	    fprintf(stderr, "forwarding tap to network\n");
+	    print_buf(buf, size, 0);
 	    send_network_raw(buf, size);
 	    //ACK generated and sent in tcp.c, might need to move here
 	    return 1;
-    } else
+    } else {
+	    fprintf(stderr, "got nothing\n");
 	    return 0;
+    }
 }
 
 /*

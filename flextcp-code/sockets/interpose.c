@@ -70,7 +70,7 @@ int socket(int domain, int type, int protocol)
   }
 
   int flexnicfd = _SF(socket)(domain, type, protocol);
-  if (flexnicfd > 0) {
+  if (flexnicfd >= 0) {
     map[flexnicfd].flexnic_fd = flexnicfd;
     map[flexnicfd].linux_fd = libc_socket(domain, type, protocol);
   }
@@ -139,10 +139,11 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
   {
     return libc_accept4(sockfd, addr, addrlen, flags);
   }
-  if (ret > 0) {
-    map[ret].flexnic_fd = ret;
-    map[ret].linux_fd = libc_accept4(map[sockfd].linux_fd, addr, addrlen, flags);
-  }
+  //if (ret >= 0) {
+  //  map[ret].flexnic_fd = ret;
+  //  map[ret].linux_fd = libc_accept4(map[sockfd].linux_fd, addr, addrlen, flags);
+  //}
+  fprintf(stderr, "done accepting\n");
   return ret;
 }
 
@@ -153,7 +154,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
   if ((ret = _SF(accept)(sockfd, addr, addrlen)) == -1 && errno == EBADF) {
     return libc_accept(sockfd, addr, addrlen);
   }
-  if (ret > 0) {
+  if (ret >= 0) {
     map[ret].flexnic_fd = ret;
     map[ret].linux_fd = libc_accept(map[sockfd].linux_fd, addr, addrlen);
   }

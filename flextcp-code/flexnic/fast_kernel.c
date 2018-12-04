@@ -38,6 +38,7 @@ int fast_kernel_poll(struct dataplane_context *ctx,
   } else if (ktx->type == FLEXTCP_PL_KTX_PACKET) {
     len = ktx->msg.packet.len;
 
+    fprintf(stderr, "reading packet\n");
     /* Read transmit queue entry */
     if (dma_read(ktx->msg.packet.addr, len, buf) != 0) {
       fprintf(stderr, "kernel_qman: DMA read failed addr=%"PRIx64" len=%x\n",
@@ -47,6 +48,7 @@ int fast_kernel_poll(struct dataplane_context *ctx,
 
     ret = 0;
     inject_tcp_ts(buf, len, ts, nbh);
+    fprintf(stderr, "sending packet\n");
     tx_send(ctx, nbh, 0, len);
   } else if (ktx->type == FLEXTCP_PL_KTX_CONNRETRAN) {
     flow_id = ktx->msg.connretran.flow_id;
@@ -103,6 +105,7 @@ void fast_kernel_packet(struct dataplane_context *ctx, void *buf,
     return;
   }
 
+  fprintf(stderr, "sending packet to kernel\n");
   if (dma_pointer(kctx->rx_base + kctx->rx_head, sizeof(*krx), &ptr) != 0) {
     fprintf(stderr, "fast_kernel_packet: invalid queue address\n");
     abort();

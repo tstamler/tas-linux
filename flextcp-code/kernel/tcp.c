@@ -26,10 +26,10 @@
 /* maximum number of listening sockets per port */
 #define LISTEN_MULTI_MAX 32
 
-#define CONN_DEBUG(c, f, x...) do { } while (0)
-#define CONN_DEBUG0(c, f) do { } while (0)
-/*#define CONN_DEBUG(c, f, x...) fprintf(stderr, "conn(%p): " f, c, x)
-#define CONN_DEBUG0(c, f, x...) fprintf(stderr, "conn(%p): " f, c)*/
+//#define CONN_DEBUG(c, f, x...) do { } while (0)
+//#define CONN_DEBUG0(c, f) do { } while (0)
+#define CONN_DEBUG(c, f, x...) fprintf(stderr, "conn(%p): " f, c, x)
+#define CONN_DEBUG0(c, f, x...) fprintf(stderr, "conn(%p): " f, c)
 
 struct listen_multi {
   size_t num;
@@ -720,6 +720,7 @@ static void listener_packet(struct listener *l, const struct pkt_tcp *p,
     return;
   }
 
+  fprintf(stderr, "writing SYN packet\n");
   tap_write((uint8_t*) p, len);
   /* make sure we don't already have this 4-tuple */
   for (n = 0, bp = l->backlog_pos; n < l->backlog_used;
@@ -750,6 +751,7 @@ static void listener_packet(struct listener *l, const struct pkt_tcp *p,
 
   l->backlog_used++;
 
+  fprintf(stderr, "appif newconn\n");
   appif_listen_newconn(l, f_beui32(p->ip.src), f_beui16(p->tcp.src));
 
   /* check if there are pending accepts */
@@ -771,6 +773,7 @@ static void listener_accept(struct listener *l)
   assert(c != NULL);
   assert(l->backlog_used > 0);
 
+  fprintf(stderr, "accepting listener\n");
   bls = l->backlog_ptrs[l->backlog_pos];
   fn_core = l->backlog_cores[l->backlog_pos];
   flow_group = l->backlog_fgs[l->backlog_pos];

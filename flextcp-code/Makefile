@@ -24,9 +24,9 @@ ifeq ($(HOSTNAME),swingout6)
 RTE_SDK = $(HOME)/dpdk/i686-native-linuxapp-gcc
 else
 ifeq ($(HOSTNAME),pig)
-RTE_SDK = $(HOME)/dpdk/build
+RTE_SDK = /usr/share/dpdk/x86_64-default-linuxapp-gcc
 else
-RTE_SDK = $(HOME)/dpdk/x86_64-native-linuxapp-gcc
+RTE_SDK = $(HOME)/dpdk/build
 endif
 endif
 
@@ -43,7 +43,7 @@ LIBS_DPDK+= -lrte_pmd_ixgbe -lrte_pmd_i40e  # IXGBE driver
 endif
 endif
 LIBS_DPDK+= -lrte_eal -lrte_mempool -lrte_mempool_ring \
-	    -lrte_hash -lrte_ring -lrte_kvargs -lrte_cmdline # DPDK Basics
+	    -lrte_hash -lrte_ring -lrte_kvargs # DPDK Basics
 ifeq ($(HOSTNAME),deathstar) # handle newer dpdk version
 LIBS_DPDK+= -lrte_ethdev
 else

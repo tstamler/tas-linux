@@ -47,6 +47,11 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  if (tap_init(htonl(config.ip))) {
+    fprintf(stderr, "tap_init failed\n");
+    return EXIT_FAILURE;
+  }
+
   /* initialize timers for timeouts */
   if (util_timeout_init(&timeout_mgr, timeout_trigger, NULL)) {
     fprintf(stderr, "timeout_init failed\n");
@@ -84,11 +89,6 @@ int main(int argc, char *argv[])
 
 
   if (tcp_init()) {
-    fprintf(stderr, "tcp_init failed\n");
-    return EXIT_FAILURE;
-  }
-
-  if (tap_init()) {
     fprintf(stderr, "tcp_init failed\n");
     return EXIT_FAILURE;
   }

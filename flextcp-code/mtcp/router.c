@@ -121,7 +121,7 @@ static int network_init(unsigned num_rx, unsigned num_tx)
   /* get mac address and device info */
   rte_eth_macaddr_get(port_id, &eth_addr);
   rte_eth_dev_info_get(port_id, &eth_devinfo);
-  //eth_devinfo.default_txconf.txq_flags = ETH_TXQ_FLAGS_NOVLANOFFL;
+  eth_devinfo.default_txconf.txq_flags = ETH_TXQ_FLAGS_NOVLANOFFL;
 
   return 0;
 }
