@@ -52,11 +52,11 @@ static void conn_packet(struct connection *c, const struct pkt_tcp *p,
 static inline struct connection *conn_alloc(void);
 static inline void conn_free(struct connection *conn);
 static void conn_register(struct connection *conn);
-static struct connection *conn_lookup(const struct pkt_tcp *p);
+//static struct connection *conn_lookup(const struct pkt_tcp *p);
 static int conn_syn_sent_packet(struct connection *c, const struct pkt_tcp *p,
     const struct tcp_opts *opts);
-static int conn_reg_synack(struct connection *c);
-static void conn_failed(struct connection *c, int status);
+//static int conn_reg_synack(struct connection *c);
+//static void conn_failed(struct connection *c, int status);
 static void conn_timeout_arm(struct connection *c, int type);
 static void conn_timeout_disarm(struct connection *c);
 
@@ -102,11 +102,12 @@ void tcp_poll(void)
         conn_failed(conn, ret);
       }
     } else if (conn->status == CONN_REG_SYNACK) {
-      if ((ret = conn->comp.status) != 0 ||
-          (ret = conn_reg_synack(conn)) != 0)
-      {
-        conn_failed(conn, ret);
-      }
+      //PUT BACK
+      //if ((ret = conn->comp.status) != 0 ||
+      //    (ret = conn_reg_synack(conn)) != 0)
+      //{
+      //  conn_failed(conn, ret);
+      //}
     } else {
       fprintf(stderr, "tcp_poll: unexpected conn state %u\n", conn->status);
     }
@@ -514,7 +515,8 @@ static int conn_syn_sent_packet(struct connection *c, const struct pkt_tcp *p,
   return 0;
 }
 
-static int conn_reg_synack(struct connection *c)
+//static int conn_reg_synack(struct connection *c)
+int conn_reg_synack(struct connection *c)
 {
   uint32_t ecn_flags = 0;
 
@@ -597,7 +599,8 @@ static void conn_register(struct connection *conn)
   tcp_conns = conn;
 }
 
-static struct connection *conn_lookup(const struct pkt_tcp *p)
+//static struct connection *conn_lookup(const struct pkt_tcp *p)
+struct connection *conn_lookup(const struct pkt_tcp *p)
 {
   struct connection *c;
   for (c = tcp_conns; c != NULL; c = c->hash_next) {
@@ -611,7 +614,8 @@ static struct connection *conn_lookup(const struct pkt_tcp *p)
   return NULL;
 }
 
-static void conn_failed(struct connection *c, int status)
+//static void conn_failed(struct connection *c, int status)
+void conn_failed(struct connection *c, int status)
 {
   struct connection *c_i, *c_p;
 

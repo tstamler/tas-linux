@@ -142,7 +142,8 @@ int tap_init(uint32_t ip4)
 void* tap_poll(void* arg)
 {
     uint8_t buf[1514];
-    
+
+    sleep(2);    
     while(1){ 
 	    fprintf(stderr, "polling tap\n");
     	    uint16_t size = poll(&poll_fd, 1, -1);
@@ -151,10 +152,56 @@ void* tap_poll(void* arg)
 		int ret = tap_read(buf, size);
 	    	assert(ret >= 0);
 	    	fprintf(stderr, "forwarding tap to network\n");
-	    	print_buf(buf, size, 0);
-	    	//send_network_raw(buf, size);
-	    	//ACK generated and sent in tcp.c, might need to move here
-    	} else {
+	    	//print_buf(buf, size, 0);
+		const struct pkt_tcp* p = (struct pkt_tcp *) buf;
+		const struct eth_hdr *eth = (struct eth_hdr*) buf;
+		const struct ip_hdr *ip = (struct ip_hdr *) (eth + 1);
+		const struct tcp_hdr *tcp = (struct tcp_hdr *) (ip + 1);
+
+		//PUT AWAY
+		if (f_beui16(eth->type) == ETH_TYPE_ARP) {
+		  if (size < sizeof(struct pkt_arp)) {
+		    fprintf(stderr, "tap process_packet: short arp packet\n");
+		    continue;
+		    //return;
+		  }
+		  fprintf(stderr, "tap arp packet\n");
+		  send_network_raw(buf, size);
+
+		} else if (f_beui16(eth->type) == ETH_TYPE_IP) {
+		  if (size < sizeof(*eth) + sizeof(*ip)) {
+		    fprintf(stderr, "tap process_packet: short ip packet\n");
+		    continue;
+		    //return;
+		  }
+
+		  if (ip->proto == IP_PROTO_TCP) {
+		      if (size < sizeof(*eth) + sizeof(*ip) + sizeof(*tcp)) {
+			fprintf(stderr, "process_packet: short tcp packet\n");
+			continue;
+			//return;
+		      }
+			struct connection* conn = conn_lookup(p);
+		        fprintf(stderr, "tap tcp packet\n");
+
+			if (conn && conn->status == CONN_REG_SYNACK) {
+     				if ((ret = conn->comp.status) != 0 ||
+      			    	   (ret = conn_reg_synack(conn)) != 0)
+      				{
+      			  		conn_failed(conn, ret);
+      				}
+			} else {
+				fprintf(stderr, "conn %p not found\n", conn);
+				send_network_raw(buf, size);
+			}
+
+		      //tcp_packet(buf, len, fn_core, flow_group);
+		    }
+		    fprintf(stderr, "tap ip, not tcp, packet\n");
+		    send_network_raw(buf, size);
+		}
+
+	    } else {
 	    	fprintf(stderr, "got nothing\n");
     	}
     }

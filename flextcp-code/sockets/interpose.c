@@ -73,6 +73,7 @@ int socket(int domain, int type, int protocol)
   if (flexnicfd >= 0) {
     map[flexnicfd].flexnic_fd = flexnicfd;
     map[flexnicfd].linux_fd = libc_socket(domain, type, protocol);
+    fprintf(stderr, "creating linux socket %d\n", map[flexnicfd].linux_fd);
   }
   return flexnicfd;
 }
@@ -99,12 +100,14 @@ int shutdown(int sockfd, int how)
 
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
-  int ret;
+  int ret, ret2;
   ensure_init();
   if ((ret = _SF(bind)(sockfd, addr, addrlen)) == -1 && errno == EBADF) {
     return libc_bind(sockfd, addr, addrlen);
   }
-  libc_bind(map[sockfd].linux_fd, addr, addrlen);
+  fprintf(stderr, "doing linux bind\n");
+  ret2 = libc_bind(map[sockfd].linux_fd, addr, addrlen);
+  fprintf(stderr, "linux bind returned %d\n", ret2);
   return ret;
 }
 
@@ -120,12 +123,14 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 int listen(int sockfd, int backlog)
 {
-  int ret;
+  int ret, ret2;
   ensure_init();
   if ((ret = _SF(listen)(sockfd, backlog)) == -1 && errno == EBADF) {
     return libc_listen(sockfd, backlog);
   }
-  libc_listen(map[sockfd].linux_fd, backlog);
+  fprintf(stderr, "doing linux listen\n");
+  ret2 = libc_listen(map[sockfd].linux_fd, backlog);
+  fprintf(stderr, "linux listen returned %d\n", ret2);
   return ret;
 }
 
@@ -134,7 +139,7 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
 {
   int ret;
   ensure_init();
-  fprintf(stderr, "doing accepting\n");
+  fprintf(stderr, "doing accept4ing\n");
   if ((ret = _SF(accept4)(sockfd, addr, addrlen, flags)) == -1 &&
       errno == EBADF)
   {
@@ -145,30 +150,36 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
   //  map[ret].flexnic_fd = ret;
   //  map[ret].linux_fd = libc_accept4(map[sockfd].linux_fd, addr, addrlen, flags);
  // }
-  fprintf(stderr, "done accepting\n");
+  fprintf(stderr, "done accept4ing\n");
   return ret;
 }
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
-  int ret;
+  int ret, ret2;
   ensure_init();
-  fprintf(stderr, "doing accepting 2\n");
+  fprintf(stderr, "doing real accepting\n");
   if ((ret = _SF(accept)(sockfd, addr, addrlen)) == -1 && errno == EBADF) {
     fprintf(stderr, "wow wrong\n");
     return libc_accept(sockfd, addr, addrlen);
   }
-  //if (ret >= 0) {
-  //  map[ret].flexnic_fd = ret;
-  //  map[ret].linux_fd = libc_accept(map[sockfd].linux_fd, addr, addrlen);
-  //}
-  fprintf(stderr, "done accepting\n");
+  fprintf(stderr, "splittcp returned %d on accept\n", ret);
+  if (ret >= 0) {
+    map[ret].flexnic_fd = ret;
+    map[ret].linux_fd = libc_accept(map[sockfd].linux_fd, addr, addrlen);
+    fprintf(stderr, "linux accept %d\n", map[ret].linux_fd);
+  } else {
+	  ret2 = libc_accept(map[sockfd].linux_fd, addr, addrlen);
+	  fprintf(stderr, "linux accept returned %d\n", ret2);
+	  perror("accept error");
+  }
+  fprintf(stderr, "done real accepting\n");
   return ret;
 }
 
 int fcntl(int sockfd, int cmd, ...)
 {
-  int ret, arg;
+  int ret, ret2, arg;
   va_list val;
   ensure_init();
 
@@ -179,6 +190,9 @@ int fcntl(int sockfd, int cmd, ...)
   if ((ret = _SF(fcntl)(sockfd, cmd, arg)) == -1 && errno == EBADF) {
     return libc_fcntl(sockfd, cmd, arg);
   }
+  fprintf(stderr, "doing linux fnctl\n");
+  ret2 = libc_fcntl(map[sockfd].linux_fd, cmd, arg);
+  fprintf(stderr, "linux fnctl returned %d\n", ret2); 
   return ret;
 }
 
@@ -198,14 +212,16 @@ int getsockopt(int sockfd, int level, int optname, void *optval,
 int setsockopt(int sockfd, int level, int optname, const void *optval,
     socklen_t optlen)
 {
-  int ret;
+  int ret, ret2;
   ensure_init();
   if ((ret = _SF(setsockopt)(sockfd, level, optname, optval, optlen)) == -1 &&
       errno == EBADF)
   {
     return libc_setsockopt(sockfd, level, optname, optval, optlen);
   }
-  libc_setsockopt(map[sockfd].linux_fd, level , optname, optval, optlen);
+  fprintf(stderr, "doing linux setsockopt\n");
+  ret2 = libc_setsockopt(map[sockfd].linux_fd, level , optname, optval, optlen);
+  fprintf(stderr, "linux setsockopt returned %d\n", ret2);
   return ret;
 }
 

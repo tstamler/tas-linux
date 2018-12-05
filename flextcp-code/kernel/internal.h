@@ -12,6 +12,7 @@
 #include <flexnic_driver.h>
 #include <utils_nbqueue.h>
 #include <utils_timeout.h>
+#include <packet_defs.h>
 
 #include "tap.h"
 
@@ -891,6 +892,10 @@ static inline void print_buf(uint8_t *payload, int len, int offset)
 
 	return;
 }
+
+struct connection *conn_lookup(const struct pkt_tcp *p);
+int conn_reg_synack(struct connection *c);
+void conn_failed(struct connection *c, int status);
 
 /** @} */
 

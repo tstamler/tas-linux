@@ -533,13 +533,13 @@ static inline void process_packet(const void *buf, uint16_t len,
   const struct ip_hdr *ip = (struct ip_hdr *) (eth + 1);
   const struct tcp_hdr *tcp = (struct tcp_hdr *) (ip + 1);
 
-  fprintf(stderr, "processing packet\n");
+  //fprintf(stderr, "processing packet\n");
   if (f_beui16(eth->type) == ETH_TYPE_ARP) {
     if (len < sizeof(struct pkt_arp)) {
       fprintf(stderr, "process_packet: short arp packet\n");
       return;
     }
-    fprintf(stderr, "arp packet\n");
+    //fprintf(stderr, "arp packet\n");
 
     arp_packet(buf, len);
   } else if (f_beui16(eth->type) == ETH_TYPE_IP) {
@@ -554,10 +554,10 @@ static inline void process_packet(const void *buf, uint16_t len,
         return;
       }
 
-      fprintf(stderr, "tcp packet\n");
+      //fprintf(stderr, "tcp packet\n");
       tcp_packet(buf, len, fn_core, flow_group);
     }
-    fprintf(stderr, "ip, not tcp, packet\n");
+    //fprintf(stderr, "ip, not tcp, packet\n");
   }
 }
 
