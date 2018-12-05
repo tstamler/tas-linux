@@ -98,6 +98,7 @@ static int open_listening(ssctx_t sc, int cn)
         fprintf(stderr, "[%d] socket failed\n", cn);
         abort();
     }
+    fprintf(stderr, "socket returned %d\n", fd);
 
     /* set reuse port (for linux to open multiple listening sockets) */
     if (ss_set_reuseport(sc, fd) != 0) {
@@ -122,12 +123,14 @@ static int open_listening(ssctx_t sc, int cn)
         fprintf(stderr, "[%d] bind failed: %d\n", cn, ret);
         abort();
     }
+    fprintf(stderr, "bind returned %d\n", ret);
 
     /* listen on socket */
     if ((ret = ss_listen(sc, fd, max_flows)) < 0) {
         fprintf(stderr, "[%d] listen failed: %d\n", cn, ret);
         abort();
     }
+    fprintf(stderr, "listen returned %d\n", ret);
 
     return fd;
 }

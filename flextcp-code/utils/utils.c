@@ -66,11 +66,11 @@ void util_flexnic_kick(struct flextcp_pl_appctx *ctx)
 
   if(now - ctx->last_ts > POLL_CYCLE) {
     // Kick kernel
-    //fprintf(stderr, "kicking app/flexnic on %d in %p, &evfd: %p\n", ctx->evfd, ctx, &(ctx->evfd)); 
+    fprintf(stderr, "kicking app/flexnic on %d in %p, &evfd: %p\n", ctx->evfd, ctx, &(ctx->evfd)); 
     uint64_t val = 1;
     int r = write(ctx->evfd, &val, sizeof(uint64_t));
-    
-	assert(r == sizeof(uint64_t));
+  
+    assert(r == sizeof(uint64_t));
   }
 
   ctx->last_ts = now;

@@ -23,7 +23,7 @@ elif [ "$(hostname)" == "rhinoceros" ] || [ "$(hostname)" == "sloth" ] ; then
   FN_CORES=3-7
   MEM_CHANNELS=4
 else
-  FN_CORES=5-6
+  FN_CORES=2-3
   MEM_CHANNELS=2
 fi
 

@@ -49,6 +49,8 @@ static int tap_fd;
 static struct pollfd poll_fd;
 static pthread_t tap_thread;
 
+uint8_t TAP_MAC[6];
+uint8_t TAP_MAC_NET[6];
 /*
  * Returns 0 if successful, -err if error.
  */
@@ -62,10 +64,11 @@ int tap_init(uint32_t ip4)
     }
 
     //set ifreq struct
-    struct ifreq ifr;
+    struct ifreq ifr, ifr2;
     memset(&ifr, 0, sizeof(ifr));
     ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
     strcpy(ifr.ifr_name, "tapdev");
+    strcpy(ifr2.ifr_name, "tapdev");
     
     //create the tap device and get fd
     int err;
@@ -97,6 +100,7 @@ int tap_init(uint32_t ip4)
     addr.sin_addr.s_addr = ip4;
     addr.sin_family = AF_INET;
     memcpy( &ifr.ifr_addr, &addr, sizeof(struct sockaddr) );
+    //memcpy( &ifr.ifr_hwaddr.sa_data, TAP_MAC, 6);
 
     if(ioctl(sock, SIOCSIFADDR, &ifr) < 0) {
         perror("ioctl: socket SIOCSIFADDR\n");
@@ -121,8 +125,31 @@ int tap_init(uint32_t ip4)
         return -1;
     }
 
+    if (ioctl(sock, SIOCGIFHWADDR, &ifr2) < 0)  {
+        perror("ioctl: socket SIOCSIFFLAGS\n");
+        close(tap_fd);
+        close(sock);
+        return -1;
+    }
+
+  
     close(sock);
 
+    fprintf(stderr, "got MAC %hhX %hhX %hhX %hhX %hhX %hhX\n", ifr2.ifr_hwaddr.sa_data[0], ifr2.ifr_hwaddr.sa_data[1], ifr2.ifr_hwaddr.sa_data[2], ifr2.ifr_hwaddr.sa_data[3], ifr2.ifr_hwaddr.sa_data[4], ifr2.ifr_hwaddr.sa_data[5]);
+
+    TAP_MAC[0] = ifr2.ifr_hwaddr.sa_data[0];
+    TAP_MAC[1] = ifr2.ifr_hwaddr.sa_data[1];
+    TAP_MAC[2] = ifr2.ifr_hwaddr.sa_data[2];
+    TAP_MAC[3] = ifr2.ifr_hwaddr.sa_data[3];
+    TAP_MAC[4] = ifr2.ifr_hwaddr.sa_data[4];
+    TAP_MAC[5] = ifr2.ifr_hwaddr.sa_data[5];
+    TAP_MAC_NET[0] = ifr2.ifr_hwaddr.sa_data[5];
+    TAP_MAC_NET[1] = ifr2.ifr_hwaddr.sa_data[4];
+    TAP_MAC_NET[2] = ifr2.ifr_hwaddr.sa_data[3];
+    TAP_MAC_NET[3] = ifr2.ifr_hwaddr.sa_data[2];
+    TAP_MAC_NET[4] = ifr2.ifr_hwaddr.sa_data[1];
+    TAP_MAC_NET[5] = ifr2.ifr_hwaddr.sa_data[0];
+    
     poll_fd.fd = tap_fd;
     poll_fd.events = POLLHUP | POLLIN;
     /*
@@ -135,7 +162,6 @@ int tap_init(uint32_t ip4)
 	    return -1;
 
     return 0; 
-
 }
 
 
@@ -147,9 +173,8 @@ void* tap_poll(void* arg)
     while(1){ 
 	    fprintf(stderr, "polling tap\n");
     	    uint16_t size = poll(&poll_fd, 1, -1);
-	    
     	if(size > 0){
-		int ret = tap_read(buf, size);
+		int ret = tap_read(buf, 1514);
 	    	assert(ret >= 0);
 	    	fprintf(stderr, "forwarding tap to network\n");
 	    	//print_buf(buf, size, 0);
@@ -162,22 +187,25 @@ void* tap_poll(void* arg)
 		if (f_beui16(eth->type) == ETH_TYPE_ARP) {
 		  if (size < sizeof(struct pkt_arp)) {
 		    fprintf(stderr, "tap process_packet: short arp packet\n");
+		    //goto tap_err;
 		    continue;
 		    //return;
 		  }
 		  fprintf(stderr, "tap arp packet\n");
-		  send_network_raw(buf, size);
+		  send_network_raw(buf, ret);
 
 		} else if (f_beui16(eth->type) == ETH_TYPE_IP) {
 		  if (size < sizeof(*eth) + sizeof(*ip)) {
 		    fprintf(stderr, "tap process_packet: short ip packet\n");
+		    //goto tap_err;
 		    continue;
 		    //return;
 		  }
 
 		  if (ip->proto == IP_PROTO_TCP) {
 		      if (size < sizeof(*eth) + sizeof(*ip) + sizeof(*tcp)) {
-			fprintf(stderr, "process_packet: short tcp packet\n");
+			fprintf(stderr, "tap process_packet: short tcp packet\n");
+			//goto tap_err;
 			continue;
 			//return;
 		      }
@@ -192,18 +220,22 @@ void* tap_poll(void* arg)
       				}
 			} else {
 				fprintf(stderr, "conn %p not found\n", conn);
-				send_network_raw(buf, size);
+				send_network_raw(buf, ret);
 			}
 
 		      //tcp_packet(buf, len, fn_core, flow_group);
 		    }
 		    fprintf(stderr, "tap ip, not tcp, packet\n");
-		    send_network_raw(buf, size);
+		    send_network_raw(buf, ret);
 		}
 
 	    } else {
 	    	fprintf(stderr, "got nothing\n");
     	}
+	//continue;
+
+	//tap_err:
+	//	fprintf(stderr, "tap read error\n");
     }
     return NULL;
 }
@@ -227,5 +259,7 @@ int tap_read(uint8_t* buf, size_t count)
  */
 int tap_write(uint8_t* buf, size_t count) 
 {
+    //fprintf(stderr, "writing to tap %zu\n", count);
+    memcpy(buf, TAP_MAC, 6);
     return write(tap_fd, buf, count);
 }

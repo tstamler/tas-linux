@@ -125,12 +125,13 @@ int listen(int sockfd, int backlog)
 {
   int ret, ret2;
   ensure_init();
-  if ((ret = _SF(listen)(sockfd, backlog)) == -1 && errno == EBADF) {
+    if ((ret = _SF(listen)(sockfd, backlog)) == -1 && errno == EBADF) {
     return libc_listen(sockfd, backlog);
   }
   fprintf(stderr, "doing linux listen\n");
   ret2 = libc_listen(map[sockfd].linux_fd, backlog);
   fprintf(stderr, "linux listen returned %d\n", ret2);
+
   return ret;
 }
 

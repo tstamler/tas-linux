@@ -23,11 +23,7 @@ endif
 ifeq ($(HOSTNAME),swingout6)
 RTE_SDK = $(HOME)/dpdk/i686-native-linuxapp-gcc
 else
-ifeq ($(HOSTNAME),pig)
-RTE_SDK = /usr/share/dpdk/x86_64-default-linuxapp-gcc
-else
 RTE_SDK = $(HOME)/dpdk/build
-endif
 endif
 
 CFLAGS+= -I$(RTE_SDK)/include -I$(RTE_SDK)/include/dpdk
