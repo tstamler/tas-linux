@@ -50,6 +50,11 @@ struct kernel_statistics {
   uint64_t acks;
 };
 
+struct tcp_opts {
+  struct tcp_mss_opt *mss;
+  struct tcp_timestamp_opt *ts;
+};
+
 /** Type of timeout */
 enum timeout_type {
   /** ARP request */
@@ -547,6 +552,7 @@ struct connection {
     uint32_t local_seq;
     /** Timestamp received with SYN/SYN-ACK packet */
     uint32_t syn_ts;
+    uint32_t syn_ecr;
   /**@}*/
 
   /**
@@ -897,6 +903,13 @@ struct connection *conn_lookup(const struct pkt_tcp *p);
 struct connection *conn_lookup_rev(const struct pkt_tcp *p);
 int conn_reg_synack(struct connection *c);
 void conn_failed(struct connection *c, int status);
+
+int send_control_tap_rev(const struct connection *conn, uint16_t flags,
+    int ts_opt, uint32_t ts_echo, uint32_t ecr_echo, uint16_t mss_opt);
+
+int parse_options(const struct pkt_tcp *p, uint16_t len,
+    struct tcp_opts *opts);
+
 
 /** @} */
 

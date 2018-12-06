@@ -180,7 +180,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
 int fcntl(int sockfd, int cmd, ...)
 {
-  int ret, ret2, arg;
+  int ret, arg;
   va_list val;
   ensure_init();
 
@@ -191,6 +191,7 @@ int fcntl(int sockfd, int cmd, ...)
   if ((ret = _SF(fcntl)(sockfd, cmd, arg)) == -1 && errno == EBADF) {
     return libc_fcntl(sockfd, cmd, arg);
   }
+  int ret2;
   fprintf(stderr, "doing linux fnctl\n");
   ret2 = libc_fcntl(map[sockfd].linux_fd, cmd, arg);
   fprintf(stderr, "linux fnctl returned %d\n", ret2); 

@@ -7,7 +7,6 @@
 #include <rte_config.h>
 #include <rte_ip.h>
 
-#include <packet_defs.h>
 #include <utils.h>
 #include <utils_rng.h>
 #include "internal.h"
@@ -41,10 +40,10 @@ struct backlog_slot {
   uint16_t len;
 };
 
-struct tcp_opts {
-  struct tcp_mss_opt *mss;
-  struct tcp_timestamp_opt *ts;
-};
+//struct tcp_opts {
+//  struct tcp_mss_opt *mss;
+//  struct tcp_timestamp_opt *ts;
+//};
 
 static int conn_arp_done(struct connection *conn);
 static void conn_packet(struct connection *c, const struct pkt_tcp *p,
@@ -67,15 +66,15 @@ static void listener_accept(struct listener *l);
 
 static inline uint16_t port_alloc(void);
 static inline int send_control_tap(const struct connection *conn, uint16_t flags,
-    int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
-static inline int send_control_tap_rev(const struct connection *conn, uint16_t flags,
-    int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
+    int ts_opt, uint32_t ts_echo, uint32_t ecr_echo, uint16_t mss_opt);
+//static inline int send_control_tap_rev(const struct connection *conn, uint16_t flags,
+//    int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
 static inline int send_control(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
 static inline int send_reset(const struct pkt_tcp *p,
     const struct tcp_opts *opts);
-static inline int parse_options(const struct pkt_tcp *p, uint16_t len,
-    struct tcp_opts *opts);
+//static inline int parse_options(const struct pkt_tcp *p, uint16_t len,
+//    struct tcp_opts *opts);
 
 static uintptr_t ports[PORT_MAX + 1];
 static uint16_t port_eph_hint = PORT_FIRST_EPH;
@@ -531,10 +530,11 @@ int conn_reg_synack(struct connection *c)
   fprintf(stderr, "sending SYNACK\n");
   /* send ACK */
   send_control(c, TCP_SYN | TCP_ACK | ecn_flags, 1, c->syn_ts, TCP_MSS);
+  
+  send_control_tap_rev(c, TCP_ACK, 1, c->syn_ts, c->syn_ecr, 0);
 
   appif_accept_conn(c, 0);
 
-  send_control_tap_rev(c, TCP_ACK, 1, c->syn_ts, 0);
   return 0;
 }
 
@@ -742,8 +742,6 @@ static void listener_packet(struct listener *l, const struct pkt_tcp *p,
     return;
   }
 
-  fprintf(stderr, "writing SYN packet\n");
-  tap_write((uint8_t*) p, len);
   /* make sure we don't already have this 4-tuple */
   for (n = 0, bp = l->backlog_pos; n < l->backlog_used;
       n++, bp = (bp + 1) % l->backlog_len)
@@ -848,6 +846,11 @@ static void listener_accept(struct listener *l)
   l->wait_conns = c->hash_next;
   c->hash_next = tcp_conns;
   tcp_conns = c;
+  
+  fprintf(stderr, "writing SYN packet\n");
+  tap_write((uint8_t*) p, bls->len);
+  //sleep(10);
+  
   nbqueue_enq(&conn_async_q, &c->comp.el);
 
   fprintf(stderr, "connection created\n");
@@ -878,7 +881,7 @@ static inline int send_control_tap_raw(uint64_t local_mac, uint64_t remote_mac,
     uint32_t local_ip, uint32_t remote_ip,
     uint16_t remote_port, uint16_t local_port, uint32_t local_seq,
     uint32_t remote_seq, uint16_t flags, int ts_opt, uint32_t ts_echo,
-    uint16_t mss_opt)
+    uint32_t ecr_echo, uint16_t mss_opt)
 {
   uint8_t buf[1500];
   struct pkt_tcp *p;
@@ -944,7 +947,7 @@ static inline int send_control_tap_raw(uint64_t local_mac, uint64_t remote_mac,
     memset(opt_ts, 0, optlen);
     opt_ts->kind = TCP_OPT_TIMESTAMP;
     opt_ts->length = sizeof(*opt_ts);
-    opt_ts->ts_val = t_beui32(0);
+    opt_ts->ts_val = t_beui32(ecr_echo);
     opt_ts->ts_ecr = t_beui32(ts_echo);
   }
 
@@ -1041,22 +1044,22 @@ static inline int send_control_raw(uint64_t remote_mac, uint32_t remote_ip,
 }
 
 static inline int send_control_tap(const struct connection *conn, uint16_t flags,
-    int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
+    int ts_opt, uint32_t ts_echo, uint32_t ecr_echo, uint16_t mss_opt)
 {
   return send_control_tap_raw(flexnic_info->mac_addr, conn->remote_mac,  conn->local_ip, 
       conn->remote_ip, conn->remote_port,
       conn->local_port, conn->local_seq, conn->remote_seq, flags, ts_opt,
-      ts_echo, mss_opt);
+      ts_echo, ecr_echo, mss_opt);
 
 }
 
-static inline int send_control_tap_rev(const struct connection *conn, uint16_t flags,
-    int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
+int send_control_tap_rev(const struct connection *conn, uint16_t flags,
+    int ts_opt, uint32_t ts_echo, uint32_t ecr_echo, uint16_t mss_opt)
 {
   return send_control_tap_raw(conn->remote_mac, conn->remote_mac, conn->remote_ip, 
       conn->local_ip, conn->local_port,
       conn->remote_port, conn->remote_seq, conn->local_seq, flags, ts_opt,
-      ts_echo, mss_opt);
+      ecr_echo, ts_echo, mss_opt);
 
 }
 
@@ -1086,7 +1089,7 @@ static inline int send_reset(const struct pkt_tcp *p,
       TCP_RST | TCP_ACK, ts_opt, ts_val, 0);
 }
 
-static inline int parse_options(const struct pkt_tcp *p, uint16_t len,
+int parse_options(const struct pkt_tcp *p, uint16_t len,
     struct tcp_opts *opts)
 {
   uint8_t *opt = (uint8_t *) (p + 1);

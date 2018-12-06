@@ -38,7 +38,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <inttypes.h>
-#include <sys/poll.h>
+#include <sys/epoll.h>
 
 
 //based on: https://backreference.org/2010/03/26/tuntap-interface-tutorial/
@@ -46,7 +46,7 @@
 #include "internal.h"
 
 static int tap_fd;
-static struct pollfd poll_fd;
+static int epoll_fd;
 static pthread_t tap_thread;
 
 uint8_t TAP_MAC[6];
@@ -150,8 +150,8 @@ int tap_init(uint32_t ip4)
     TAP_MAC_NET[4] = ifr2.ifr_hwaddr.sa_data[1];
     TAP_MAC_NET[5] = ifr2.ifr_hwaddr.sa_data[0];
     
-    poll_fd.fd = tap_fd;
-    poll_fd.events = POLLHUP | POLLIN;
+    epoll_fd = epoll_create1(0);
+    assert(epoll_fd > 0);
     /*
      * https://stackoverflow.com/questions/17900459/how-to-set-ip-address-of-tun-device-and-set-link-up-through-c-program
      * https://linuxgazette.net/149/misc/melinte/udptun.c
@@ -168,12 +168,26 @@ int tap_init(uint32_t ip4)
 void* tap_poll(void* arg)
 {
     uint8_t buf[1514];
+    struct epoll_event ev, events[10];
+    int i, r;
+
+    ev.events = EPOLLIN;
+    ev.data.fd = tap_fd;
+
+    //assert(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tap_fd, &ev) > 0);
+    r = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, tap_fd, &ev) > 0;
+    if(r == -1){
+	    perror("epoll ctl");
+	    exit(1);
+    }
+    fprintf(stderr, "epoll ctl returned %d\n", r);
+
 
     sleep(2);    
     while(1){ 
 	    //fprintf(stderr, "polling tap\n");
-    	    uint16_t size = poll(&poll_fd, 1, -1);
-    	if(size > 0){
+    	uint16_t nfds = epoll_wait(epoll_fd, events, 10, -1);
+    	for(i=0; i < nfds; i++){
 		int ret = tap_read(buf, 1514);
 	    	assert(ret >= 0);
 	    	//fprintf(stderr, "forwarding tap to network\n");
@@ -212,18 +226,34 @@ void* tap_poll(void* arg)
 			struct connection* conn = conn_lookup_rev(p);
 		        fprintf(stderr, "tap tcp packet\n");
 
+			struct tcp_opts opts;
+			r = parse_options(p, ret, &opts);
+  			if (r != 0 || opts.ts == NULL) {
+    				fprintf(stderr, "listener_packet: parsing options failed or no timestamp "
+        					"option\n");
+  			}
+
 			if (conn && conn->status == CONN_REG_SYNACK) {
      				fprintf(stderr, "conn found\n");
 				conn->local_seq = f_beui32(tcp->seqno) + 1; 
 				conn->remote_seq = f_beui32(tcp->ackno);
+				conn->syn_ecr = f_beui32(opts.ts->ts_ecr);
 
 				if ((ret = conn->comp.status) != 0 ||
       			    	   (ret = conn_reg_synack(conn)) != 0)
       				{
       			  		conn_failed(conn, ret);
       				}
-			} else {
-				fprintf(stderr, "conn %p not found\n", conn);
+			} else if(conn && (TCPH_FLAGS(&p->tcp) & (TCP_SYN | TCP_ACK)) 
+						== (TCP_SYN | TCP_ACK)){
+				send_control_tap_rev(conn, TCP_ACK, 1, conn->syn_ts, conn->syn_ecr, 0);
+				fprintf(stderr, "resending ACK\n");
+			} else if(conn) {
+				fprintf(stderr, "I don't know what to do with this\n");
+			} else	
+			{
+
+				fprintf(stderr, "conn not found\n");
 				send_network_raw(buf, ret);
 			}
 
@@ -234,9 +264,7 @@ void* tap_poll(void* arg)
 		    }
 		}
 
-	    } else {
-	    	fprintf(stderr, "got nothing\n");
-    	}
+	}
 	//continue;
 
 	//tap_err:
