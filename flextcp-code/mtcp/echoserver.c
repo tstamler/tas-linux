@@ -213,6 +213,7 @@ static inline void accept_connections(struct core *co)
     ss_epev_t ev;
 
     while (co->conns != NULL) {
+	sleep(1);
         if ((cfd = ss_accept(co->sc, co->lfd, NULL, NULL)) < 0) {
             if (errno == EAGAIN) {
                 break;

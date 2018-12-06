@@ -171,13 +171,13 @@ void* tap_poll(void* arg)
 
     sleep(2);    
     while(1){ 
-	    fprintf(stderr, "polling tap\n");
+	    //fprintf(stderr, "polling tap\n");
     	    uint16_t size = poll(&poll_fd, 1, -1);
     	if(size > 0){
 		int ret = tap_read(buf, 1514);
 	    	assert(ret >= 0);
-	    	fprintf(stderr, "forwarding tap to network\n");
-	    	print_buf(buf, ret, 0);
+	    	//fprintf(stderr, "forwarding tap to network\n");
+	    	//print_buf(buf, ret, 0);
 		const struct pkt_tcp* p = (struct pkt_tcp *) buf;
 		const struct eth_hdr *eth = (struct eth_hdr*) buf;
 		const struct ip_hdr *ip = (struct ip_hdr *) (eth + 1);
@@ -214,6 +214,9 @@ void* tap_poll(void* arg)
 
 			if (conn && conn->status == CONN_REG_SYNACK) {
      				fprintf(stderr, "conn found\n");
+				conn->local_seq = f_beui32(tcp->seqno) + 1; 
+				conn->remote_seq = f_beui32(tcp->ackno);
+
 				if ((ret = conn->comp.status) != 0 ||
       			    	   (ret = conn_reg_synack(conn)) != 0)
       				{
