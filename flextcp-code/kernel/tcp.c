@@ -68,6 +68,8 @@ static void listener_accept(struct listener *l);
 static inline uint16_t port_alloc(void);
 static inline int send_control_tap(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
+static inline int send_control_tap_rev(const struct connection *conn, uint16_t flags,
+    int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
 static inline int send_control(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt);
 static inline int send_reset(const struct pkt_tcp *p,
@@ -532,7 +534,7 @@ int conn_reg_synack(struct connection *c)
 
   appif_accept_conn(c, 0);
 
-  send_control_tap(c, TCP_ACK, 1, c->syn_ts, 0);
+  send_control_tap_rev(c, TCP_ACK, 1, c->syn_ts, 0);
   return 0;
 }
 
@@ -614,6 +616,19 @@ struct connection *conn_lookup(const struct pkt_tcp *p)
   return NULL;
 }
 
+struct connection *conn_lookup_rev(const struct pkt_tcp *p)
+{
+  struct connection *c;
+  for (c = tcp_conns; c != NULL; c = c->hash_next) {
+    if (f_beui32(p->ip.dest) == c->remote_ip &&
+        f_beui16(p->tcp.src) == c->local_port &&
+        f_beui16(p->tcp.dest) == c->remote_port)
+    {
+      return c;
+    }
+  }
+  return NULL;
+}
 //static void conn_failed(struct connection *c, int status)
 void conn_failed(struct connection *c, int status)
 {
@@ -859,7 +874,8 @@ static inline int send_network_raw(uint16_t len, uint8_t* buf)
 	nicif_tx_send(new_tail);
 }
 */
-static inline int send_control_tap_raw(uint64_t remote_mac, uint32_t remote_ip,
+static inline int send_control_tap_raw(uint64_t local_mac, uint64_t remote_mac, 
+    uint32_t local_ip, uint32_t remote_ip,
     uint16_t remote_port, uint16_t local_port, uint32_t local_seq,
     uint32_t remote_seq, uint16_t flags, int ts_opt, uint32_t ts_echo,
     uint16_t mss_opt)
@@ -889,7 +905,7 @@ static inline int send_control_tap_raw(uint64_t remote_mac, uint32_t remote_ip,
 
   /* fill ethernet header */
   memcpy(&p->eth.dest, &remote_mac, ETH_ADDR_LEN);
-  memcpy(&p->eth.src, &flexnic_info->mac_addr, ETH_ADDR_LEN);
+  memcpy(&p->eth.src, &local_mac, ETH_ADDR_LEN);
   p->eth.type = t_beui16(ETH_TYPE_IP);
 
   /* fill ipv4 header */
@@ -901,7 +917,7 @@ static inline int send_control_tap_raw(uint64_t remote_mac, uint32_t remote_ip,
   p->ip.ttl = 0xff;
   p->ip.proto = IP_PROTO_TCP;
   p->ip.chksum = 0;
-  p->ip.src = t_beui32(config.ip);
+  p->ip.src = t_beui32(local_ip);
   p->ip.dest = t_beui32(remote_ip);
 
   /* fill tcp header */
@@ -1027,11 +1043,23 @@ static inline int send_control_raw(uint64_t remote_mac, uint32_t remote_ip,
 static inline int send_control_tap(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
 {
-  return send_control_tap_raw(conn->remote_mac, conn->remote_ip, conn->remote_port,
+  return send_control_tap_raw(flexnic_info->mac_addr, conn->remote_mac,  conn->local_ip, 
+      conn->remote_ip, conn->remote_port,
       conn->local_port, conn->local_seq, conn->remote_seq, flags, ts_opt,
       ts_echo, mss_opt);
 
 }
+
+static inline int send_control_tap_rev(const struct connection *conn, uint16_t flags,
+    int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
+{
+  return send_control_tap_raw(conn->remote_mac, conn->remote_mac, conn->remote_ip, 
+      conn->local_ip, conn->local_port,
+      conn->remote_port, conn->remote_seq, conn->local_seq, flags, ts_opt,
+      ts_echo, mss_opt);
+
+}
+
 static inline int send_control(const struct connection *conn, uint16_t flags,
     int ts_opt, uint32_t ts_echo, uint16_t mss_opt)
 {

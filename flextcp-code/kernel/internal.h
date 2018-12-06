@@ -894,6 +894,7 @@ static inline void print_buf(uint8_t *payload, int len, int offset)
 }
 
 struct connection *conn_lookup(const struct pkt_tcp *p);
+struct connection *conn_lookup_rev(const struct pkt_tcp *p);
 int conn_reg_synack(struct connection *c);
 void conn_failed(struct connection *c, int status);
 

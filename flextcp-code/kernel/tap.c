@@ -177,7 +177,7 @@ void* tap_poll(void* arg)
 		int ret = tap_read(buf, 1514);
 	    	assert(ret >= 0);
 	    	fprintf(stderr, "forwarding tap to network\n");
-	    	//print_buf(buf, size, 0);
+	    	print_buf(buf, ret, 0);
 		const struct pkt_tcp* p = (struct pkt_tcp *) buf;
 		const struct eth_hdr *eth = (struct eth_hdr*) buf;
 		const struct ip_hdr *ip = (struct ip_hdr *) (eth + 1);
@@ -185,7 +185,7 @@ void* tap_poll(void* arg)
 
 		//PUT AWAY
 		if (f_beui16(eth->type) == ETH_TYPE_ARP) {
-		  if (size < sizeof(struct pkt_arp)) {
+		  if (ret < sizeof(struct pkt_arp)) {
 		    fprintf(stderr, "tap process_packet: short arp packet\n");
 		    //goto tap_err;
 		    continue;
@@ -195,7 +195,7 @@ void* tap_poll(void* arg)
 		  send_network_raw(buf, ret);
 
 		} else if (f_beui16(eth->type) == ETH_TYPE_IP) {
-		  if (size < sizeof(*eth) + sizeof(*ip)) {
+		  if (ret < sizeof(*eth) + sizeof(*ip)) {
 		    fprintf(stderr, "tap process_packet: short ip packet\n");
 		    //goto tap_err;
 		    continue;
@@ -203,17 +203,18 @@ void* tap_poll(void* arg)
 		  }
 
 		  if (ip->proto == IP_PROTO_TCP) {
-		      if (size < sizeof(*eth) + sizeof(*ip) + sizeof(*tcp)) {
-			fprintf(stderr, "tap process_packet: short tcp packet\n");
-			//goto tap_err;
-			continue;
-			//return;
-		      }
-			struct connection* conn = conn_lookup(p);
+		        if (ret < sizeof(*eth) + sizeof(*ip) + sizeof(*tcp)) {
+			  fprintf(stderr, "tap process_packet: short tcp packet\n");
+			  //goto tap_err;
+			  continue;
+			  //return;
+		        }
+			struct connection* conn = conn_lookup_rev(p);
 		        fprintf(stderr, "tap tcp packet\n");
 
 			if (conn && conn->status == CONN_REG_SYNACK) {
-     				if ((ret = conn->comp.status) != 0 ||
+     				fprintf(stderr, "conn found\n");
+				if ((ret = conn->comp.status) != 0 ||
       			    	   (ret = conn_reg_synack(conn)) != 0)
       				{
       			  		conn_failed(conn, ret);
@@ -224,9 +225,10 @@ void* tap_poll(void* arg)
 			}
 
 		      //tcp_packet(buf, len, fn_core, flow_group);
+		    } else {
+		    	fprintf(stderr, "tap ip, not tcp, packet\n");
+		    	send_network_raw(buf, ret);
 		    }
-		    fprintf(stderr, "tap ip, not tcp, packet\n");
-		    send_network_raw(buf, ret);
 		}
 
 	    } else {
