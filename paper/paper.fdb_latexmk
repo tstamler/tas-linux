@@ -1,14 +1,15 @@
 # Fdb version 3
-["bibtex paper"] 1544147578 "paper.aux" "paper.bbl" "paper" 1544147579
+["bibtex paper"] 1544148341 "paper.aux" "paper.bbl" "paper" 1544148377
   "./ACM-Reference-Format.bst" 1540232516 83547 c877a38c9e164a869048f78117962518 ""
-  "paper.aux" 1544147579 1022 df4247784aaefb884a0b838ae70b4900 ""
+  "paper.aux" 1544148377 1273 f2fe4540a1e9f48c88ba0b547c5150cb ""
   "paper.bcf" 0 -1 0 ""
   "paper.bib" 1544147530 0 d41d8cd98f00b204e9800998ecf8427e ""
   (generated)
   "paper.bbl"
-["pdflatex"] 1544147578 "/home/hfingler/splittcp/tas-linux/paper/paper.tex" "paper.pdf" "paper" 1544147579
+  "paper.blg"
+["pdflatex"] 1544148377 "/home/hfingler/splittcp/tas-linux/paper/paper.tex" "paper.pdf" "paper" 1544148377
   "/etc/texmf/web2c/texmf.cnf" 1542137736 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/hfingler/splittcp/tas-linux/paper/paper.tex" 1544147577 2620 7a8c221fd64c4ba2e08644e694953fff ""
+  "/home/hfingler/splittcp/tas-linux/paper/paper.tex" 1544148377 2582 acf228bbfc4506046883516a0786339f ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_25tcsq.enc" 1490133665 2921 8ca0eb0831f9bc5da080d3697cfe67bf ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_76gpa5.enc" 1490133665 2933 9ad527ce78d7c5fa0a642dead095f172 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_7grukw.enc" 1490133665 2934 a4a9158faed2e9e89c771b4e3b7fc12f ""
@@ -155,15 +156,15 @@
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1542137786 2700761 ac0584cc9514ab21918550a6948c4ee2 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1542137817 4127352 f6f80645b79dc4f4b96fc7f872732d6e ""
   "acmart.cls" 1541978516 90210 a1f2de671f95a906eac9f1e6b8503fa7 ""
-  "paper.aux" 1544147579 1022 df4247784aaefb884a0b838ae70b4900 ""
-  "paper.bbl" 1544147578 1785 8ed37e936ba16de73718c10d329b7108 "bibtex paper"
-  "paper.out" 1544147579 178 c9da130e46245c882d731743c822d306 ""
-  "paper.tex" 1544147577 2620 7a8c221fd64c4ba2e08644e694953fff ""
-  "sections/background.tex" 1544147574 0 d41d8cd98f00b204e9800998ecf8427e ""
-  "sections/design.tex" 1544147568 0 d41d8cd98f00b204e9800998ecf8427e ""
-  "sections/intro.tex" 1544147225 0 d41d8cd98f00b204e9800998ecf8427e ""
+  "paper.aux" 1544148377 1273 f2fe4540a1e9f48c88ba0b547c5150cb ""
+  "paper.bbl" 1544148341 1785 8ed37e936ba16de73718c10d329b7108 "bibtex paper"
+  "paper.out" 1544148377 486 74523c71b82528128147b19cea4d64ed ""
+  "paper.tex" 1544148377 2582 acf228bbfc4506046883516a0786339f ""
+  "sections/background.tex" 1544148332 20 c8ef36e912ab5abc8c5fd2231fe471dc ""
+  "sections/design.tex" 1544148336 16 7bef2288cf1cd37a753232c63778dc4f ""
+  "sections/intro.tex" 1544148340 22 5c23bcd9d46cf48d2292896666a8a8fc ""
   (generated)
   "paper.out"
   "paper.log"
-  "paper.pdf"
   "paper.aux"
+  "paper.pdf"
