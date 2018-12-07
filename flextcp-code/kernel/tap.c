@@ -206,7 +206,8 @@ void* tap_poll(void* arg)
 		    //return;
 		  }
 		  fprintf(stderr, "tap arp packet\n");
-		  send_network_raw(buf, ret);
+		  //send_network_raw(buf, ret);
+		  arp_packet_tap((uint8_t*) p, ret);
 
 		} else if (f_beui16(eth->type) == ETH_TYPE_IP) {
 		  if (ret < sizeof(*eth) + sizeof(*ip)) {

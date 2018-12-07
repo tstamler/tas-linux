@@ -539,7 +539,7 @@ static inline void process_packet(const void *buf, uint16_t len,
       fprintf(stderr, "process_packet: short arp packet\n");
       return;
     }
-    //fprintf(stderr, "arp packet\n");
+    fprintf(stderr, "arp packet\n");
 
     arp_packet(buf, len);
   } else if (f_beui16(eth->type) == ETH_TYPE_IP) {

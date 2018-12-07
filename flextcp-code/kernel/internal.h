@@ -806,6 +806,7 @@ int arp_request(struct nicif_completion *comp, uint32_t ip, uint64_t *mac);
  * @param len Length of packet
  */
 void arp_packet(const void *pkt, uint16_t len);
+void arp_packet_tap(const void *pkt, uint16_t len);
 
 /**
  * ARP timeout triggered.
