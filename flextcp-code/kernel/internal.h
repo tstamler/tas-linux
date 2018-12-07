@@ -550,6 +550,7 @@ struct connection {
     uint32_t remote_seq;
     /** Local sequence number. */
     uint32_t local_seq;
+    uint32_t linux_seq;
     /** Timestamp received with SYN/SYN-ACK packet */
     uint32_t syn_ts;
     uint32_t syn_ecr;

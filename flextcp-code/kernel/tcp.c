@@ -317,6 +317,7 @@ int tcp_accept(struct app_context *ctx, uint64_t opaque,
   conn->hash_next = listen->wait_conns;
   listen->wait_conns = conn;
 
+  fprintf(stderr, "listener waiting on accept\n");
   if (listen->backlog_used > 0) {
     listener_accept(listen);
   }
@@ -527,7 +528,7 @@ int conn_reg_synack(struct connection *c)
     ecn_flags = TCP_ECE;
   }
 
-  fprintf(stderr, "sending SYNACK\n");
+  //fprintf(stderr, "sending SYNACK %d\n", c->local_seq);
   /* send ACK */
   send_control(c, TCP_SYN | TCP_ACK | ecn_flags, 1, c->syn_ts, TCP_MSS);
   
@@ -832,6 +833,8 @@ static void listener_accept(struct listener *l)
   c->comp.notify_fd = -1;
   c->comp.status = 0;
 
+  fprintf(stderr, "adding nic connection\n");
+
   if (nicif_connection_add(c->db_id, c->remote_mac, c->local_ip, c->local_port,
         c->remote_ip, c->remote_port, c->rx_buf - (uint8_t *) packetmem,
         c->rx_len, c->tx_buf - (uint8_t *) packetmem, c->tx_len,
@@ -847,9 +850,9 @@ static void listener_accept(struct listener *l)
   c->hash_next = tcp_conns;
   tcp_conns = c;
   
+  //sleep(10);
   fprintf(stderr, "writing SYN packet\n");
   tap_write((uint8_t*) p, bls->len);
-  //sleep(10);
   
   nbqueue_enq(&conn_async_q, &c->comp.el);
 
@@ -1037,7 +1040,8 @@ static inline int send_control_raw(uint64_t remote_mac, uint32_t remote_ip,
   /* calculate header checksums */
   p->ip.chksum = rte_ipv4_cksum((void *) &p->ip);
   p->tcp.chksum = rte_ipv4_udptcp_cksum((void *) &p->ip, (void *) &p->tcp);
-  
+ 
+  //fprintf(stderr, "sending control with SYNACK %d\n", local_seq); 
   /* send packet */
   nicif_tx_send(new_tail);
   return 0;
@@ -1058,7 +1062,7 @@ int send_control_tap_rev(const struct connection *conn, uint16_t flags,
 {
   return send_control_tap_raw(conn->remote_mac, conn->remote_mac, conn->remote_ip, 
       conn->local_ip, conn->local_port,
-      conn->remote_port, conn->remote_seq, conn->local_seq, flags, ts_opt,
+      conn->remote_port, conn->remote_seq, conn->linux_seq, flags, ts_opt,
       ecr_echo, ts_echo, mss_opt);
 
 }

@@ -235,7 +235,7 @@ void* tap_poll(void* arg)
 
 			if (conn && conn->status == CONN_REG_SYNACK) {
      				fprintf(stderr, "conn found\n");
-				conn->local_seq = f_beui32(tcp->seqno) + 1; 
+				conn->linux_seq = f_beui32(tcp->seqno) + 1; 
 				conn->remote_seq = f_beui32(tcp->ackno);
 				conn->syn_ecr = f_beui32(opts.ts->ts_ecr);
 
@@ -250,6 +250,7 @@ void* tap_poll(void* arg)
 				fprintf(stderr, "resending ACK\n");
 			} else if(conn) {
 				fprintf(stderr, "I don't know what to do with this\n");
+				print_buf(buf, ret, 0);
 			} else	
 			{
 
@@ -260,7 +261,7 @@ void* tap_poll(void* arg)
 		      //tcp_packet(buf, len, fn_core, flow_group);
 		    } else {
 		    	fprintf(stderr, "tap ip, not tcp, packet\n");
-		    	send_network_raw(buf, ret);
+		    	//send_network_raw(buf, ret);
 		    }
 		}
 
