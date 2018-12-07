@@ -1,0 +1,4 @@
+# Sum Avg/min/max processed tput
+# 17 cores (8 active workers + 6 RX/TX threads + 3 mTCP threads)
+Raw 0.00 0.00 2798833.00 2764697 2839422
+"Per core" 0.00 0.00 164637.24 162629.24 167024.82

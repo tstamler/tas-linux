@@ -1,0 +1,3 @@
+# Sum Avg/min/max processed tput
+# 14 cores (8 active workers + 6 RX/TX threads)
+Raw 0.00 0.00 3017370.00 2930929 3035812

@@ -1,0 +1,4 @@
+# Sum Avg/min/max processed tput
+# 8 cores (8 active workers)
+Raw 0.00 0.00 4783988.71 4733205 4832829
+"Per core" 0.00 0.00 597998.59 591650.62 604103.62

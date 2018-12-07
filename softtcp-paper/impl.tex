@@ -1,0 +1,42 @@
+\section{Implementation}\label{sec:impl}
+
+We have implemented \taas from scratch in 10,127 lines of C code
+(LoC). \taas' fast path comprises 2,931 LoC. The slow path comprises
+3,744 LoC. The user-level library providing the POSIX sockets API is
+dynamically linked to unmodified application binaries and comprises
+3,452 LoC.
+
+\paragraph{Fast path.}
+The fast path runs in a user-level process, separate from the
+applications. The fast path uses DPDK~\cite{dpdk} to directly access
+the machine's NIC, bypassing the Linux kernel. Unlike systems that
+rely on batching to reduce kernel-user switches, \taas uses a
+configurable number of dedicated host cores, which we can vary based
+on the offered network load. Each core replicates a linear packet
+processing pipeline and exposes a queue pair to the slow path and to
+each application context to avoid synchronization. The NIC's RSS
+mechanism ensures that packets within flows are assigned to the same
+pipeline and not reordered.
+
+\paragraph{Slow path.} The slow path runs as a separate thread within
+the fast process. To bootstrap context queues, we require applications
+to first connect to the slow path via a named UNIX domain
+socket. Applications use the socket to set up a shared memory region
+for the context queues. The slow path also uses the socket for
+automatic cleanup, to detect when application processes exit by
+receiving a hangup signal via the corresponding socket.
+
+\subsection{Limitations}
+
+\paragraph{Fixed connection buffer sizes.}
+\softtcp requires connection send and receive buffers to be fixed upon
+connection creation. We do not currently implement any buffer resizing
+depending on load.  For workloads with large numbers of inactive
+connections, buffer resizing (via additional management commands) is
+desirable.
+
+\paragraph{TCP slow start.} Our prototype does not fully implement the
+TCP slow start algorithm. Instead, we current double the sending rate
+every RTT until we reach steady-state. Since our measurements are only
+concerned with steady-state performance, this limitation does not
+impact the reported results.

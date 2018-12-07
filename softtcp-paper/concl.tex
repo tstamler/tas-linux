@@ -1,0 +1,19 @@
+\section{Conclusion}
+
+The continuing increase in data center link bandwidth, coupled with a
+much slower improvement in CPU performance, is threatening the
+viability of kernel software TCP processing, pushing researchers to
+investigate alternative solutions. Any alternative has to ensure that
+it is safe, efficient, scalable, and flexible.
+
+We present \taas, TCP acceleration as a software service. \taas
+executes common-case TCP operation in a linearized fast path, while
+handling corner cases in a slow path.  \taas achieves throughput up to
+4.5$\times$ that of Linux and up to 1.5$\times$ that of IX for common
+cloud applications.
+% A further 1.6 speedup is possible on some applications through
+% object steering on the NIC.
+Unlike kernel bypass, \taas enforces congestion control on untrusted
+applications, and achieves much higher levels of per-flow fairness
+than Linux. \taas scales to many cores and connections, while being
+flexible to further TCP protocol innovation.
