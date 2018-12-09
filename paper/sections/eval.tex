@@ -23,7 +23,7 @@ and server run Linux kernel 4.18.
 \begin{tabular}{@{}crrrrrr@{}}
 \toprule
                & \multicolumn{6}{c}{Latency (us)}                                                                                                                                    \\ \midrule
-               & \multicolumn{3}{c}{TAS}                                                          & \multicolumn{3}{c}{Linux-Integrated TAS}                                         \\
+               & \multicolumn{3}{c}{Original TAS}                                                          & \multicolumn{3}{c}{Linux-Integrated TAS}                                         \\
 \# Connections & \multicolumn{1}{c}{Avg} & \multicolumn{1}{c}{99\%} & \multicolumn{1}{c}{99.99\%} & \multicolumn{1}{c}{Avg} & \multicolumn{1}{c}{99\%} & \multicolumn{1}{c}{99.99\%} \\
 1              & 60                      & 70                       & 79                          & 61                      & 62                       & 78                          \\
 2              & 63                      & 65                       & 97                          & 62                      & 64                       & 82                          \\
@@ -32,10 +32,11 @@ and server run Linux kernel 4.18.
 16             & 68                      & 77                       & 144                         & 69                      & 76                       & 146                         \\
 32             & 72                      & 97                       & 170                         & 74                      & 104                      & 153                         \\ \bottomrule
 \end{tabular}
-\label{fastpath-latency}
+\caption{Average and tail latency of RPC Echo server microbenchmark}
+\label{tab:fastpath-latency}
 \end{table}
 
-Table \ref{fastpath-latency} shows the average and tail latencies of the RPC 
+Table \ref{tab:fastpath-latency} shows the average and tail latencies of the RPC 
 echo microbenchmark with TAS and Linux-Integrated TAS. The average-case latency
 of the fast path of Linux-Integrated TAS is within 3\% of TAS. The performance 
 at the tail varies a bit more between the two versions, but is within 25\% of 
