@@ -9,11 +9,33 @@ The slow path can take advantage of Linux's policies for congestion control
 and forward this information to the fast path for enforcement. This would entail
 forwarding packets with ECN bits set between Linux and the slow path. The slow
 path would then observe Linux's response to the network congestion and mimic
-it.
+it. In addition, we may want to forward ECN packets received from the network to
+Linux or forcibly generate and send it ECN packets to get it to more aggresively
+back off the network. 
 
-\subsection{Connection Timeouts}
-The slow path needs to occasionally send packets to Linux to allow Linux to keep
-its connections from timing out. Additionally, Linux may want to timeout
-connections for other reasons; the slow path could examine Linux's response and
-decide if it wants to do the same.
+\subsection{Connection Timeouts and Resets}
 
+We can utilize FIN and RST packets sent by Linux for various reasons to 
+potentially shutdown remote connections. In order to do this intelligently, we'd
+need to identify the different reasons why Linux would want to close a 
+connection and selectively choose the ones we want to fulfill. In order to 
+prevent regular timeouts, the slow path would need to occasionally send packets 
+to Linux to allow Linux to keep its connections from timing out, which we 
+currently do not do. 
+
+\subsection{OpenVSwitch Integration}
+
+OpenVSwitch\cite{openvswitch} (OVS) is a virtual switch commonly used in 
+datacenters for reprogrammable traffic steering at very large scale. It supports
+a number of useful traffic identification and modification options at minimal 
+overhead. 
+
+While our implementation currently interfaces with Linux, it would be even more
+useful to be able to work alongside OVS. Luckily, OVS supports Linux virtual 
+interfaces like tap and tun devices, so integration should be fairly simple. 
+However, because tap devices operate at the Ethernet layer in the network stack,
+our current implementation would only support OVS functions that filter or 
+switch based on MAC addresses. This may be mildly useful, but in order to get 
+all of the functionality of OVS, we'd want to use a tun device instead. By doing
+this, we would have a IP layer virtual network interface, and OVS can route and 
+filter based on IP addresses instead.
