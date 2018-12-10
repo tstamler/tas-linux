@@ -16,13 +16,13 @@ Because of this and network speeds ramping up, there has been plenty of work imp
 user-level network stacks \cite{mtcp, utcp, janus, alpine, lwip, fstack} with different ideas that try make general adoption
 easier.
 
-One of these ideas is TCP acceleration as a service (TAS or SplitTCP  ****TBD: check naming on intro/abstract***).
+One of these ideas is TCP acceleration as a service (TAS).
 The idea behind TAS is that the TCP stack can be divided into two parts: a slow path, which does the connection
 setup and teardown, and a fast path, where the data packets are sent and/or received. Figure \ref{fig:splittcp} 
 shows the general idea of TAS; the user's application use an unmodified POSIX API to talk to a user-level TCP
 library. The fast path can directly read from and write to the network card through DPDK \cite{dpdk}; when data packets
 arrive or need to be sent out, the fast path directly communicates with the user-level library;
-when it gets packets that have to be handled by the slow path (such as SYN packets), the packet 
+when it gets packets that have to be handled by the slow path (such as \textit{SYN} packets), the packet 
 is offloaded to it through shared memory. Because the two paths are executed in different threads, the slow path doesn't
 affect the performance of the fast path.
 

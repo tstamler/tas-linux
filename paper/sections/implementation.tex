@@ -1,24 +1,24 @@
 \section{Implementation}
 
-In order to achieve a Linux-integrated SplitTCP implementation, the following 
+In order to achieve a Linux-integrated TAS implementation, the following 
 changes were implemented and functionalities added.
 
 \subsection{Tap Initialization and Interaction}
 
-At the time of SplitTCP's initialization, a tap device is created with Linux.
+At the time of TAS's initialization, a tap device is created with Linux.
 We control the name and IP of this tap device, but Linux and anyone using the
 operating system with root privileges can configure it to do whatever they
-want, and SplitTCP will reflect these changes. At initialization, we need to
+want, and TAS will reflect these changes. At initialization, we need to
 save the MAC address that is assigned to the tap device so that future packets
 written to the tap device can copy and use it. 
 
 Writing packets to the tap device is simple and can be done from anywhere in the
-slow path. It is merely a function call with the buffer and a length, but we 
+slow path. It is merely a POSIX \textit{write} function call with the buffer and a length, but we 
 make sure to copy the saved MAC address for the tap device over the desination
 MAC field in any packets being written to the tap device. 
 
 Reading packets from the tap device is done in a separate thread that can block
-with epoll while waiting for packets to be received from Linux. Once packets are
+with \textit{epoll} while waiting for packets to be received from Linux. Once packets are
 received, they are parsed and handled according to headers, flags, and existing
 connection state. With this parsing already done, it enables us to more easily
 handle more types of Linux packets and add more functionality. 
@@ -26,17 +26,17 @@ handle more types of Linux packets and add more functionality.
 \subsection{Tap Control Packets and Network Interface}
 
 To more easily create and format packets to write to the tap device, a new
-interface was written based on the existing SplitTCP control packet creation
-interface, but reversed. When a control packet such as an ACK needs to be 
+interface was written based on the existing TAS control packet creation
+interface, but reversed. When a control packet such as an \textit{ACK} needs to be 
 generated, connection state is looked up and crafted into a packet, with
-SplitTCP being the source and the remote host being the destination. Instead,
+TAS being the source and the remote host being the destination. Instead,
 with our tap control interface, a packet is crafted with the remote host as
 the source and Linux as the destination. This reversal applies to IP addresses,
 MAC addresses, sequence and acknoledgement numbers, and TCP timestamp options.
 
 In addition to a new interface for generating packets for the tap device, a new
 interface was needed for forwarding raw packets from the tap device to the 
-network. By default, SplitTCP only has the existing control interface for 
+network. By default, TAS only has the existing control interface for 
 creating and sending certain packets to the network from the slow path, but 
 not an interface for sending raw buffers directly to the network. We added this
 functionality so that we can forward packets directly from Linux to the remote
@@ -44,28 +44,28 @@ host with minimal modifications.
 
 \subsection{Modified Socket Library}
 
-Because Linux does not just acknowledge arbitrary SYN packets, we had to do some
+Because Linux does not just acknowledge arbitrary \textit{SYN} packets, we had to do some
 extra work at the library level in order to prepare Linux. Typically, the 
 application would interact with Linux through the socket library, but with 
-SplitTCP, all socket operations are intercepted and forwarded instead of being
+TAS, all socket operations are intercepted and forwarded instead of being
 delivered to Linux. In this environment, Linux is completely unaware of the 
 application listening for connections. To rectify this, we duplicate all 
 necessary socket operations through libc. When the application calls a socket 
 operation that we need, the interposition layer on top of libc will call both 
-SplitTCP and libc so that Linux is aware of all the same information that 
-SplitTCP is. The functions we currently handle for this are socket, bind, 
+TAS and libc so that Linux is aware of all the same information that 
+TAS is. The functions we currently handle for this are socket, bind, 
 fcntl, setsockopt, listen, and accept. 
 
 To make sure that file descriptors aren't getting mixed up, we maintain a map
-of SplitTCP file descriptors to Linux file descriptors and only return SplitTCP
+of TAS file descriptors to Linux file descriptors and only return TAS
 descriptors to the application. Whenever one of the aforementioned functions is 
-called, the SplitTCP file descriptor provided by the application is 
+called, the TAS file descriptor provided by the application is 
 cross-referenced with the map in order to find the proper file descriptor to use
 with libc. 
 
 \subsection{ARP Support}
 
-In our implementation of SplitTCP, Linux cannot interact directly with remote 
+In our implementation of TAS, Linux cannot interact directly with remote 
 hosts, and ARP requests and replies are no longer handled after connection state
 is initialized. Because Linux will likely need to do an ARP request to obtain 
 the remote host's MAC address, and because we don't want to make any 
@@ -74,24 +74,24 @@ modifications to the fast path, we handle ARP requests in the slow path.
 ARP replies are generally sent by the host to which the corresponding address
 belongs, but in order to provide Linux the information it needs we fake these 
 replies inside the slow path. Upon receiving an ARP request from Linux, we 
-search through SplitTCP's ARP table to see if the address is there. If it is, 
+search through TAS's ARP table to see if the address is there. If it is, 
 we generate a reply and write it back to Linux. If it is not, we forward the 
-packet to the network. Because SplitTCP was unaware of this address, we know
+packet to the network. Because TAS was unaware of this address, we know
 it does not maintain any connection state for it, and the corresponding ARP 
 reply should be forwarded to the slow path, where it can be written to the tap
 device. 
 
 \subsection{Connection Setup}
 
-Finally, we will outline the general changes we had to make to SplitTCP to get
-it to cooperate with Linux during connection setup. Once the SYN packet arrives,
+Finally, we will outline the general changes we had to make to TAS to get
+it to cooperate with Linux during connection setup. Once the \textit{SYN} packet arrives,
  it will naturally be forwarded to the slow path for
-connection establishment. After allowing SplitTCP to do its normal connection 
-state initialization, we write the SYN packet to Linux. At this point, SplitTCP
-would generate an event for the SYNACK to be generated asynchronously. We remove
-this funcationality and instead wait for Linux to send a SYNACK. Linux will 
-first do an ARP request, which we handle, followed by a SYNACK. We forward this
-SYNACK to the network, then do the normal SplitTCP work of updating the 
+connection establishment. After allowing TAS to do its normal connection 
+state initialization, we write the \textit{SYN} packet to Linux. At this point, TAS
+would generate an event for the \textit{SYN/ACK} to be generated asynchronously. We remove
+this funcationality and instead wait for Linux to send a \textit{SYN/ACK}. Linux will 
+first do an ARP request, which we handle, followed by a \textit{SYN/ACK}. We forward this
+packet to the network, then follow the normal TAS flow of updating the 
 connection state and signalling the application, as well as the additional work 
-of generating an ACK packet to send to Linux. 
+of generating an \textit{ACK} packet to send to Linux. 
 
