@@ -69,3 +69,9 @@ overheads on the slow path. We must wait for Linux to handle the packets we send
 to it before we can observe its response. For example, we must issue a blocking 
 accept call to Linux to ensure that TAS does not prematurely move on to the next 
 connection before observing Linux's response.
+
+\paragraph{Discussion.} Although the slow path performance takes a significant
+hit when adding Linux integration, our goal was not to improve the performance of
+the slow path but rather to gain functionality on the slow path without
+compromising performance on the fast path. Our evaluation results for fast path
+performance verify that we met our goal.
