@@ -1,4 +1,4 @@
-\section{Design}
+\section{Design}\label{Design}
 
 \subsection{SplitTCP Design}
 
@@ -94,3 +94,10 @@ initializing connection state again, we fake ARP responses to Linux requests
 in the slow path by searching SplitTCP's ARP table and manually crafting 
 packets. 
 
+\begin{figure}
+\centering
+\includegraphics[width=0.7\columnwidth]{figures/splittcp.png}
+\caption{Design of TAS with kernel integration. TAS now replicates all slow path operations to the kernel, checks what
+it did by reading raw packets from the TAP device and mimics its decisions.}
+\label{fig:splittcp_tap}
+\end{figure}

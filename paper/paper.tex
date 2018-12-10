@@ -72,9 +72,18 @@
 
 
 \begin{abstract}
-This paper provides a sample of a \LaTeX\ document which conforms,
-somewhat loosely, to the formatting guidelines for
-ACM SIG Proceedings.
+Netowkring speeds have increased while CPU speeds have not. As a result, an
+increasing portion of packet processing time is spent in the kernel
+networking stack. To mitigate this effect, TCP Acceleration as a Service
+(TAS) splits TCP processing into a fast path and a slow path, both of which
+operate as userspace processes. In doing so, however, TAS loses some
+information about the network when compared to an in-kernel networking stack
+(e.g., firewalls, ARP tables). We present a Linux-integrated TAS that
+interfaces with Linux via a virtual network device. TAS duplicates some slow
+path packets to Linux via this virtual device, observes Linux's response,
+and then mimics that response. We show that this method can allow TAS to use
+Linux's information about the network while retaining the performance of TAS
+fast path operations.
 \end{abstract}
 
 %
@@ -109,7 +118,11 @@ ACM SIG Proceedings.
 
 \input{sections/design}
 
-\input{sections/implementation}
+%\input{sections/implementation}
+
+\input{sections/eval}
+
+\input{sections/conclusion}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{paper}

@@ -1,1 +1,51 @@
-\section{Introduction}
+\section{Introduction}\label{Introduction}
+
+Networking speeds have become faster while CPUs have not, causing network packet
+processing efficiency to become important for datacenter networks. Datacenter
+applications continue to want high throughput and low latency access to the
+network along with the guarantees provided by TCP: lossless in-order delivery of
+packets, but this comes at the cost of consuming an increasing fraction of CPU
+processing resources. For example, nearly 70\% of packet processing time for a
+simple echo server application is spent in the Linux networking stack 
+\cite{peter:arrakis}.
+
+To cope with this, many alternative TCP stacks have been proposed that seek to
+increase the efficiency of packet processing. TAS (TCP Acceleration as a
+Service) splits TCP packet processing into a fast path and a slow path. The fast
+path handles common data path operations such as handling in-order delivery of
+packets from established connections and generating acknowledgements. The slow
+path handles less common, control path operations such as connection management,
+congestion control, and connection timeouts. Both the fast path and slow path
+operate as user-level processes.
+
+Implementing a TCP stack in userspace comes with a few drawbacks. Namely, the
+Linux TCP stack contains a lot of functionality and information about the
+network that is hard to replicate in userspace. Ideally, a userspace networking 
+stack should make the same decisions about connection management, security,
+congestion, etc. as the Linux stack.
+
+We present Linux-Integrated TCP Acceleration as a Service, an extension to TAS
+that interfaces with Linux for some slow path operations. The slow path now
+sends some packets to Linux, observes Linux's response, and mimics it. In this
+way, TAS can gain some of the information and functionality of the Linux TCP
+stack, such as firewall and network information (e.g., ARP tables), while
+retaining the performance of fast path operations.
+
+Our paper makes the following contributions:
+
+\begin{itemize}
+\item We design and implement a method for the TAS to interface with Linux for
+  some slow path operations (connection setup and teardown, ARP) in order to
+  gain information and functionality.
+
+\item We evaluate our implementation and show that we introduce no overheads
+  for fast path operations. Connection setup and ARP slow down significantly,
+  but these operations are uncommon enough that they do not affect the
+  throughput seen by the application.
+\end{itemize}
+
+In the remainder of our paper, we provide some background on TAS and virtual
+network devices in Section \ref{Background}. We discuss the design and
+implementation of Linux-integrated TAS in Section \ref{Design}. We evaluate
+our implementation in Section \ref{Eval} and finally conclude and discuss
+future work in Section \ref{Conclusion}.

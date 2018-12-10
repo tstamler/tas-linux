@@ -1,3 +1,11 @@
 *.o
 *.so
 flextcp-code/tests/*
+paper/*.aux
+paper/*.bbl
+paper/*.log
+paper/*.out
+paper/*.blg
+paper/*.fls
+paper/*.tex.gz
+paper/*.latexmk
