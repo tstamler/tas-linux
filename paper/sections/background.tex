@@ -30,7 +30,8 @@ affect the performance of the fast path.
 \begin{figure}
 \centering
 \includegraphics[width=0.7\columnwidth]{figures/splittcp_default.png}
-\caption{TBD.}
+\caption{The idea behind TAS is split network operations between a slow and a fast path, both in user level, completely
+avoiding the kernel.}
 \label{fig:splittcp}
 \end{figure}
 
@@ -63,6 +64,7 @@ devices work in layer 2 (ethernet frames).
 \begin{figure}
 \centering
 \includegraphics[width=0.7\columnwidth]{figures/tap_diag.png}
-\caption{TBD.}
+\caption{The difference between the usage of a regular NIC from a TUN/TAP device. In the latter the data is not sent to the
+outside, but stored as raw data in a kernel space buffer which an application can read and write to.}
 \label{fig:tap}
 \end{figure}

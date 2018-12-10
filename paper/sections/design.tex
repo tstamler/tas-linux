@@ -19,3 +19,10 @@ Compromises
 	*Fast path doesn't forward ACK packets to slow path
 	*Manually generate ACK packets
 
+\begin{figure}
+\centering
+\includegraphics[width=0.7\columnwidth]{figures/splittcp.png}
+\caption{Design of TAS with kernel integration. TAS now replicates all slow path operations to the kernel, checks what
+it did by reading raw packets from the TAP device and mimics its decisions.}
+\label{fig:splittcp_tap}
+\end{figure}
