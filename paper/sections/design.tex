@@ -51,7 +51,7 @@ Secondly, we don't worry about performance in the slow path as long as it
 doesn't incur any scheduling or blocking problems with the fast path. We have 
 very little control over how often Linux will deliver packets to the slow path, 
 so we want to make sure this doesn't negatively affect the fast path threads 
-when they might be co-scheduled with the slow path. 
+when they might be co-scheduled with the slow path.
 
 \subsection{Compromises Made}
 
