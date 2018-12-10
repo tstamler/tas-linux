@@ -4,7 +4,7 @@
 
 The problem of TCP processing overheads is not a new problem, and it is a 
 problem that will likely never be completely solved. Simply using Linux and
-accepting the performance loss is simply not an option for datacenter 
+accepting the performance loss is not an option for datacenter 
 applications. Several alternatives have been proposed.
 
 \paragraph{Kernel Bypass.} 
@@ -79,7 +79,7 @@ to gain knowledge and functionality from Linux.
 \subsection{TAP devices}
 
 One of the tools used in this work was TUN/TAP devices. These are virtual network devices that are purely software 
-(hence the ``virtual''). These devices mimic a physical NIC, the only difference is that instead of receiving/sending
+(hence the ``virtual''). These devices mimic a physical NIC; the only difference is that instead of receiving/sending
 data to the outside through a wire/radio waves, it is done so to a buffer in kernel space that an application can read/write
 through the POSIX file API. Figure \ref{fig:tap} has a basic representation of both concepts: when using a regular (wired)
 NIC, the kernel gets calls from user space, and sends/receives from a physical device. When using a TUN/TAP device, the data is

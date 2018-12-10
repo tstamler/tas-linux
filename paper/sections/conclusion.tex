@@ -9,8 +9,8 @@ The slow path took a hit in performance due to proxying system calls and having 
 read/write from a TAP device on every slow path
 operation, which incurs overhead from constant mode switches.
 %*Goal was to add functionality, not increase performance
-But, because slow path operations are infrequent, we think that the tradeoff of slower connection setup
-and teardown is worth it to add powerful kernel network functionality such as packet filtering without
+However, because slow path operations are infrequent, we think that the tradeoff of slower connection setup
+and teardown is worth it to add powerful kernel network functionality such as firewalls and congestion control without
 having to reimplement it in user space.
 
 

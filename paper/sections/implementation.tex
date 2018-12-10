@@ -56,7 +56,7 @@ TAS and libc so that Linux is aware of all the same information that
 TAS is. The functions we currently handle for this are socket, bind, 
 fcntl, setsockopt, listen, and accept. 
 
-To make sure that file descriptors aren't getting mixed up, we maintain a map
+To ensure proper bookkeeping of the different file descriptors, we maintain a map
 of TAS file descriptors to Linux file descriptors and only return TAS
 descriptors to the application. Whenever one of the aforementioned functions is 
 called, the TAS file descriptor provided by the application is 
