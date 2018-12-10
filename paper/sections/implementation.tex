@@ -1,0 +1,28 @@
+\section{Implementation}
+
+Tap creation and packet parsing
+ -save MAC address
+ -seperate thread epoll on the tap device
+ -identify packets/ lookup connections
+
+Slow path tap control interface
+ -reversed control interface
+  -reverse IP, MAC address, sequence/ack nos, and tcp options
+ -override MAC address
+
+Slow path raw network interface
+ -only connection based before
+
+ARP Support
+ -can receive ARP packets from Linux
+ -lookup in SplitTCP's ARP tables
+ -Craft a response
+
+Connection Setup
+ -dual socket library (socket, bind, fcntl, setsockopt, listen, accept)
+ -SYN already goes to slow path
+ -Linux will use ARP support for client MAC
+ -instead of having slow path asynchronously handle SYNACK, wait for Linux
+ -read SYNACK from tap, write to network and write ACK to tap
+
+
