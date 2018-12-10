@@ -1,15 +1,15 @@
 \section{Design}\label{Design}
 
-\subsection{SplitTCP Design}
+\subsection{TAS Design}
 
-SplitTCP seeks to address a number of problems in the realm of datacenter packet
-processing such as effciency, predictability, and workload proportionality. 
+TAS seeks to address a number of problems in the realm of datacenter packet
+processing such as efficiency, predictability, and workload proportionality. 
 Several important design decisions were made to accomplish these, but we will 
 focus on just two of those: the split into a fast path and a slow path, and the
 implementation of a userspace TCP stack.
 
-One key way that SplitTCP achieves high connection scalability and 
-predictability is by dividing TCP funcationality into two components: a fast 
+One key way that TAS achieves high connection scalability and 
+predictability is by dividing TCP functionality into two components: a fast 
 path and a slow path. The fast path handles common-case packets and detects 
 exceptions that need to be handled in the slow path. The main functions that
 the fast path handles are common case send/receive, where the fast path directly
@@ -37,7 +37,7 @@ datacenter environment.
 \subsection{Integration Goals}
 
 To most effectively interface with Linux, we take advantage of the previously 
-described SplitTCP design choices in order to minimize our impact on common case
+described TAS design choices in order to minimize our impact on common case
 packet processing. 
 
 First, we don't make any modifications to the fast path code or data structures.
@@ -67,17 +67,17 @@ to the slow path, or write packets directly to the tap device. Instead of
 absorbing these costs in the fast path, we instead manually create a new ACK
 packet during connection setup in the slow path and write it to the tap device.
 
-Second, we maintain separate sequence numbers between Linux and SplitTCP and 
-between SplitTCP and remote hosts. SplitTCP immediately initializes fast path 
-state upon receiving a SYN packet and doesn't update it after that unless 
+Second, we maintain separate sequence numbers between Linux and TAS and 
+between TAS and remote hosts. TAS immediately initializes fast path 
+state upon receiving a \textit{SYN} packet and doesn't update it after that unless 
 there's some kind of exception. Although this takes place in the slow path,
 this would require adding some kind of complexity, as we won't know the sequence
-number Linux wants to use until it provides a SYNACK. We can address this by 
+number Linux wants to use until it provides a \textit{SYN/ACK}. We can address this by 
 doing one of the following: adding an artificial delay or some kind of signal 
-from the thread interacting with Linux in the middle of SYN processing to make 
+from the thread interacting with Linux in the middle of \textit{SYN} processing to make 
 sure the sequence number is available when fast path state is initialized, 
 initializing fast path state at a later time, modifying the fast path to 
-identify either outgoing SYNACK packets or incorrect outgoing sequence numbers
+identify either outgoing \textit{SYN/ACK} packets or incorrect outgoing sequence numbers
 and adapting, or keeping separate sequence numbers. The final solution ended up 
 being the simplest; the first will slow down connection setup even more, the 
 second may create additional race conditions or problems in connection setup, 
@@ -87,11 +87,11 @@ Third, similarly to the first compromise, we handle ARP packets manually in
 the slow path, as they are not always forwarded to the slow path. By default,
 the fast path only forwards ARP packets to the slow path if it is an IP address
 that it doesn't have state for. As connection state is initialized immediately 
-upon a SYN packet being received, if we try to forward any Linux ARPs to the 
+upon a \textit{SYN} packet being received, if we try to forward any Linux ARPs to the 
 network for that connection, the replies will be dropped by the fast path. In
 this case, instead of forwarding all ARP packets to the slow path or delaying
 initializing connection state again, we fake ARP responses to Linux requests 
-in the slow path by searching SplitTCP's ARP table and manually crafting 
+in the slow path by searching TAS's ARP table and manually crafting 
 packets. 
 
 \begin{figure}
