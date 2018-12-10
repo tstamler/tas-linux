@@ -19,7 +19,7 @@ and server run Linux kernel 4.18.
 
 \subsection{Fast Path Performance}
 
-\begin{table}[]
+\begin{table}
 \begin{tabular}{@{}crrrrrr@{}}
 \toprule
                & \multicolumn{6}{c}{Latency (us)}                                                                                                                                    \\ \midrule
@@ -32,8 +32,10 @@ and server run Linux kernel 4.18.
 16             & 68                      & 77                       & 144                         & 69                      & 76                       & 146                         \\
 32             & 72                      & 97                       & 170                         & 74                      & 104                      & 153                         \\ \bottomrule
 \end{tabular}
+\vspace{16pt}
 \caption{Average and tail latency of RPC Echo server microbenchmark}
 \label{tab:fastpath-latency}
+
 \end{table}
 
 Table \ref{tab:fastpath-latency} shows the average and tail latencies of the RPC 
@@ -58,6 +60,7 @@ the fast path.
   \includegraphics[width=\columnwidth]{figures/rpc_echo_throughput.png}
   \caption{RPC echo throughput for a single threaded client and server.}
   \label{fig:fastpath-throughput}
+  \vspace{-2pt}
 \end{figure}
 
 \subsection{Slow Path Performance}
