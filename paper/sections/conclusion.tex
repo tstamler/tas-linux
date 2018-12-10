@@ -5,11 +5,12 @@
 Integrating kernel functionality into TAS did not affect the fast path operations, which is where
 it gets most of its performance benefits.
 %*Slow path is hit, but is not frequent
-The slow path took a hit in performance due to proxying system calls on every slow path
-operation and having to read/write from a TAP device, which incurs plenty of mode switches.
+The slow path took a hit in performance due to proxying system calls and having to 
+read/write from a TAP device on every slow path
+operation, which incurs overhead from constant mode switches.
 %*Goal was to add functionality, not increase performance
-Because slow path operations are infrequent, we think that the tradeoff of slower connection setup
+But, because slow path operations are infrequent, we think that the tradeoff of slower connection setup
 and teardown is worth it to add powerful kernel network functionality such as packet filtering without
-having to reimplement it all in user space.
+having to reimplement it in user space.
 
 
