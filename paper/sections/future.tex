@@ -1,0 +1,19 @@
+\section{Future Work}\label{Future}
+
+Our design and implementation of Linux-Integrated TAS can handle slow path
+operations such as connection setup/teardown as well as ARP packets. However,
+there is additional slow path functionality that we leave to future work.
+
+\subsection{Congestion Control}
+The slow path can take advantage of Linux's policies for congestion control
+and forward this information to the fast path for enforcement. This would entail
+forwarding packets with ECN bits set between Linux and the slow path. The slow
+path would then observe Linux's response to the network congestion and mimic
+it.
+
+\subsection{Connection Timeouts}
+The slow path needs to occasionally send packets to Linux to allow Linux to keep
+its connections from timing out. Additionally, Linux may want to timeout
+connections for other reasons; the slow path could examine Linux's response and
+decide if it wants to do the same.
+
