@@ -67,9 +67,12 @@ the fast path.
 
 Our performance results show that the slow path performance is reduced 
 drastically compared to the original TAS. Connection setup times were reported 
-on the order of seconds. This is due to the fact that we now incur system call 
-overheads on the slow path. We must wait for Linux to handle the packets we send 
-to it before we can observe its response. For example, we must issue a blocking 
+on the order of hundreds of milliseconds. This is due to the fact that we now 
+incur system call overheads on the slow path, as well as the overhead of reading
+and writing entire packets to and from the tap device. We must wait for Linux to
+handle the packets we send to it before we can observe its response, resulting 
+a synchronous and slow connection setup. In order to ensure the all socket 
+functions are completed in both TAS and Linux,  we must issue a blocking 
 accept call to Linux to ensure that TAS does not prematurely move on to the next 
 connection before observing Linux's response.
 
