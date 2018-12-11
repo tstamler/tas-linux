@@ -1,25 +1,3 @@
-/**************************************************************************
- * simpletun.c                                                            *
- *                                                                        *
- * A simplistic, simple-minded, naive tunnelling program using tun/tap    *
- * interfaces and TCP. DO NOT USE THIS PROGRAM FOR SERIOUS PURPOSES.      *
- *                                                                        *
- * You have been warned.                                                  *
- *                                                                        *
- * (C) 2010 Davide Brini.                                                 *
- *                                                                        *
- * DISCLAIMER AND WARNING: this is all work in progress. The code is      *
- * ugly, the algorithms are naive, error checking and input validation    *
- * are very basic, and of course there can be bugs. If that's not enough, *
- * the program has not been thoroughly tested, so it might even fail at   *
- * the few simple things it should be supposed to do right.               *
- * Needless to say, I take no responsibility whatsoever for what the      *
- * program might do. The program has been written mostly for learning     *
- * purposes, and can be used in the hope that is useful, but everything   *
- * is to be taken "as is" and without any kind of warranty, implicit or   *
- * explicit. See the file LICENSE for further details.                    *
- *************************************************************************/ 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,9 +17,6 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <sys/epoll.h>
-
-
-//based on: https://backreference.org/2010/03/26/tuntap-interface-tutorial/
 
 #include "internal.h"
 
@@ -78,17 +53,7 @@ int tap_init(uint32_t ip4)
         return err;
     }
 
-
-    /*
-     * This is setting the TAP ip, might not be necessary
-     * 
-     * If you bind, you can bind to a specific IP address corresponding to one of the machine's interfaces, 
-     * or you can bind to 0.0.0.0, in which case the socket will listen on all interfaces.
-     * If you connect an unbound socket, then the machine's routing tables, in conjunction with the destination IP 
-     * adress, will determine which interface the connection request goes out on.
-     */ 
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+   int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         perror("Cannot open udp socket on TAP\n");
         close(tap_fd);
@@ -135,7 +100,7 @@ int tap_init(uint32_t ip4)
   
     close(sock);
 
-    fprintf(stderr, "got MAC %hhX %hhX %hhX %hhX %hhX %hhX\n", ifr2.ifr_hwaddr.sa_data[0], ifr2.ifr_hwaddr.sa_data[1], ifr2.ifr_hwaddr.sa_data[2], ifr2.ifr_hwaddr.sa_data[3], ifr2.ifr_hwaddr.sa_data[4], ifr2.ifr_hwaddr.sa_data[5]);
+    //fprintf(stderr, "got MAC %hhX %hhX %hhX %hhX %hhX %hhX\n", ifr2.ifr_hwaddr.sa_data[0], ifr2.ifr_hwaddr.sa_data[1], ifr2.ifr_hwaddr.sa_data[2], ifr2.ifr_hwaddr.sa_data[3], ifr2.ifr_hwaddr.sa_data[4], ifr2.ifr_hwaddr.sa_data[5]);
 
     TAP_MAC[0] = ifr2.ifr_hwaddr.sa_data[0];
     TAP_MAC[1] = ifr2.ifr_hwaddr.sa_data[1];
@@ -152,12 +117,7 @@ int tap_init(uint32_t ip4)
     
     epoll_fd = epoll_create1(0);
     assert(epoll_fd > 0);
-    /*
-     * https://stackoverflow.com/questions/17900459/how-to-set-ip-address-of-tun-device-and-set-link-up-through-c-program
-     * https://linuxgazette.net/149/misc/melinte/udptun.c
-     * https://stackoverflow.com/questions/36375530/what-is-the-destination-address-for-a-tap-tun-device
-     */
-
+  
     if(pthread_create(&tap_thread, NULL, tap_poll, NULL) != 0)
 	    return -1;
 
@@ -197,7 +157,6 @@ void* tap_poll(void* arg)
 		const struct ip_hdr *ip = (struct ip_hdr *) (eth + 1);
 		const struct tcp_hdr *tcp = (struct tcp_hdr *) (ip + 1);
 
-		//PUT AWAY
 		if (f_beui16(eth->type) == ETH_TYPE_ARP) {
 		  if (ret < sizeof(struct pkt_arp)) {
 		    fprintf(stderr, "tap process_packet: short arp packet\n");
@@ -205,7 +164,7 @@ void* tap_poll(void* arg)
 		    continue;
 		    //return;
 		  }
-		  fprintf(stderr, "tap arp packet\n");
+		  //fprintf(stderr, "tap arp packet\n");
 		  //send_network_raw(buf, ret);
 		  arp_packet_tap((uint8_t*) p, ret);
 
@@ -225,7 +184,7 @@ void* tap_poll(void* arg)
 			  //return;
 		        }
 			struct connection* conn = conn_lookup_rev(p);
-		        fprintf(stderr, "tap tcp packet\n");
+		    //    fprintf(stderr, "tap tcp packet\n");
 
 			struct tcp_opts opts;
 			r = parse_options(p, ret, &opts);
@@ -255,14 +214,14 @@ void* tap_poll(void* arg)
 			} else	
 			{
 
-				fprintf(stderr, "conn not found\n");
+				//fprintf(stderr, "conn not found\n");
 				send_network_raw(buf, ret);
 			}
 
 		      //tcp_packet(buf, len, fn_core, flow_group);
 		    } else {
-		    	fprintf(stderr, "tap ip, not tcp, packet\n");
-		    	//send_network_raw(buf, ret);
+		    	//fprintf(stderr, "tap ip, not tcp, packet\n");
+		    	send_network_raw(buf, ret);
 		    }
 		}
 
@@ -275,26 +234,13 @@ void* tap_poll(void* arg)
     return NULL;
 }
 
-/*
- * (proxy call to POSIX read; man read)
- * If there's data available, write it to the pointer passed, return value is number of bytes.
- * Please be sure to pass a buffer large enough. TODO: do we support jumbo frames?
- * If there's no data, return zero.
- * On error, return negative.
- */
 int tap_read(uint8_t* buf, size_t count)
 {
     return read(tap_fd, buf, count);
 }
 
-/*
- * (proxy call to POSIX write; man write)
- * Tries to write data to the tap device. n bytes from buf.
- * Returns bytes written if successful, negative if error.
- */
 int tap_write(uint8_t* buf, size_t count) 
 {
-    //fprintf(stderr, "writing to tap %zu\n", count);
     memcpy(buf, TAP_MAC, 6);
     return write(tap_fd, buf, count);
 }

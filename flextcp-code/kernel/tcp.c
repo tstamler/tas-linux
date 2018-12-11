@@ -317,7 +317,7 @@ int tcp_accept(struct app_context *ctx, uint64_t opaque,
   conn->hash_next = listen->wait_conns;
   listen->wait_conns = conn;
 
-  fprintf(stderr, "listener waiting on accept\n");
+  //fprintf(stderr, "listener waiting on accept\n");
   if (listen->backlog_used > 0) {
     listener_accept(listen);
   }
@@ -772,7 +772,7 @@ static void listener_packet(struct listener *l, const struct pkt_tcp *p,
 
   l->backlog_used++;
 
-  fprintf(stderr, "appif newconn\n");
+  //fprintf(stderr, "appif newconn\n");
   appif_listen_newconn(l, f_beui32(p->ip.src), f_beui16(p->tcp.src));
 
   /* check if there are pending accepts */
@@ -794,7 +794,7 @@ static void listener_accept(struct listener *l)
   assert(c != NULL);
   assert(l->backlog_used > 0);
 
-  fprintf(stderr, "accepting listener\n");
+  //fprintf(stderr, "accepting listener\n");
   bls = l->backlog_ptrs[l->backlog_pos];
   fn_core = l->backlog_cores[l->backlog_pos];
   flow_group = l->backlog_fgs[l->backlog_pos];
@@ -833,7 +833,7 @@ static void listener_accept(struct listener *l)
   c->comp.notify_fd = -1;
   c->comp.status = 0;
 
-  fprintf(stderr, "adding nic connection\n");
+  //fprintf(stderr, "adding nic connection\n");
 
   if (nicif_connection_add(c->db_id, c->remote_mac, c->local_ip, c->local_port,
         c->remote_ip, c->remote_port, c->rx_buf - (uint8_t *) packetmem,
@@ -851,12 +851,12 @@ static void listener_accept(struct listener *l)
   tcp_conns = c;
   
   //sleep(10);
-  fprintf(stderr, "writing SYN packet\n");
+  //fprintf(stderr, "writing SYN packet\n");
   tap_write((uint8_t*) p, bls->len);
   
   nbqueue_enq(&conn_async_q, &c->comp.el);
 
-  fprintf(stderr, "connection created\n");
+  //fprintf(stderr, "connection created\n");
   //send_control_tap(c, TCP_ACK, 1, c->syn_ts, 0);
 out:
   l->backlog_used--;

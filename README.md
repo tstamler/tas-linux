@@ -1,2 +1,3 @@
 # tas-linux
-Test application for integrating Linux into TAS
+
+Linux-Integrated TCP Acceleration as a Service
